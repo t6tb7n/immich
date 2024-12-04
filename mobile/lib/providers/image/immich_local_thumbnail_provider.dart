@@ -61,9 +61,12 @@ class ImmichLocalThumbnailProvider
       final bytes = await File(asset.localId!).readAsBytes();
       final image = decodeImage(bytes);
       if (image != null) {
-        final thumbnail =
-            copyResize(image, width: 32, height: 32, maintainAspect: true);
-        thumbBytes = encodeJpg(thumbnail, quality: 75);
+        final thumbnail = image.height < image.width
+            ? copyResize(image,
+                height: 32, interpolation: Interpolation.average)
+            : copyResize(image,
+                width: 32, interpolation: Interpolation.average);
+        thumbBytes = encodePng(thumbnail);
       }
     } else {
       thumbBytes = await asset.local?.thumbnailDataWithSize(
@@ -84,9 +87,13 @@ class ImmichLocalThumbnailProvider
       final bytes = await File(asset.localId!).readAsBytes();
       final image = decodeImage(bytes);
       if (image != null) {
-        final thumbnail = copyResize(image,
-            width: width, height: height, maintainAspect: true);
-        normalThumbBytes = encodeJpg(thumbnail, quality: 100);
+        final thumbnail = image.height < image.width
+            ? copyResize(image,
+                height: height, interpolation: Interpolation.average)
+            : copyResize(image,
+                width: width, interpolation: Interpolation.average);
+
+        normalThumbBytes = encodePng(thumbnail);
       }
     } else {
       normalThumbBytes = await asset.local

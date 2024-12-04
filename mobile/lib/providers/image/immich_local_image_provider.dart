@@ -53,9 +53,12 @@ class ImmichLocalImageProvider extends ImageProvider<ImmichLocalImageProvider> {
       final bytes = await File(asset.localId!).readAsBytes();
       final image = decodeImage(bytes);
       if (image != null) {
-        final thumbnail =
-            copyResize(image, width: 256, height: 256, maintainAspect: true);
-        thumbBytes = encodeJpg(thumbnail, quality: 80);
+        final thumbnail = image.height < image.width
+            ? copyResize(image,
+                height: 256, interpolation: Interpolation.average)
+            : copyResize(image,
+                width: 256, interpolation: Interpolation.average);
+        thumbBytes = encodePng(thumbnail);
       }
     } else {
       thumbBytes = await asset.local?.thumbnailDataWithSize(
