@@ -8,7 +8,9 @@ import 'package:immich_mobile/repositories/asset_media.repository.dart';
 import 'package:photo_manager/photo_manager.dart' hide AssetType;
 
 final fileMediaRepositoryProvider = Provider((ref) =>
-    Platform.isLinux ? LinuxFileMediaRepository() : FileMediaRepository());
+    (Platform.isLinux || Platform.isWindows)
+        ? DesktopFileMediaRepository()
+        : FileMediaRepository());
 
 class FileMediaRepository implements IFileMediaRepository {
   @override
@@ -80,7 +82,19 @@ class FileMediaRepository implements IFileMediaRepository {
       PhotoManager.requestPermissionExtend();
 }
 
-class LinuxFileMediaRepository implements IFileMediaRepository {
+class DesktopFileMediaRepository implements IFileMediaRepository {
+  Future<String> getDefaultAlbumPath() async {
+    if (Platform.isLinux) {
+      return (await Process.run('xdg-user-dir', ['PICTURES']))
+          .stdout
+          .toString()
+          .trim();
+    } else {
+      final user = Platform.environment["UserProfile"]!;
+      return '$user\\Pictures';
+    }
+  }
+
   @override
   Future<Asset?> saveImage(
     Uint8List data, {
@@ -107,13 +121,13 @@ class LinuxFileMediaRepository implements IFileMediaRepository {
   }) async {
     final file = File(filePath);
     final data = await file.readAsBytes();
-    final outputDir = (await Process.run('xdg-user-dir', ['PICTURES']))
-        .stdout
-        .toString()
-        .trim();
-    final outputName = relativePath ?? filePath.split('/').last;
-    await Directory('$outputDir/Immich').create(recursive: true);
-    final outputPath = '$outputDir/Immich/$outputName';
+    final outputDir = await getDefaultAlbumPath();
+    final outputName =
+        relativePath ?? filePath.split(Platform.pathSeparator).last;
+    await Directory('$outputDir${Platform.pathSeparator}Immich')
+        .create(recursive: true);
+    final outputPath =
+        '$outputDir${Platform.pathSeparator}Immich${Platform.pathSeparator}$outputName';
     await File(outputPath).writeAsBytes(data);
 
     final entity = AssetEntity(

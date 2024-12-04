@@ -49,7 +49,7 @@ class ImmichLocalImageProvider extends ImageProvider<ImmichLocalImageProvider> {
   ) async* {
     // Load a small thumbnail
     Uint8List? thumbBytes;
-    if (Platform.isLinux) {
+    if (Platform.isLinux || Platform.isWindows) {
       final bytes = await File(asset.localId!).readAsBytes();
       final image = decodeImage(bytes);
       if (image != null) {
@@ -76,7 +76,7 @@ class ImmichLocalImageProvider extends ImageProvider<ImmichLocalImageProvider> {
 
     if (asset.isImage) {
       File? file;
-      if (Platform.isLinux) {
+      if (Platform.isLinux || Platform.isWindows) {
         final path = asset.localId;
         file = path != null ? File(path) : null;
       } else {

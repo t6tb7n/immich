@@ -10,7 +10,8 @@ part of 'linux_device_asset.entity.dart';
 // ignore_for_file: duplicate_ignore, non_constant_identifier_names, constant_identifier_names, invalid_use_of_protected_member, unnecessary_cast, prefer_const_constructors, lines_longer_than_80_chars, require_trailing_commas, inference_failure_on_function_invocation, unnecessary_parenthesis, unnecessary_raw_strings, unnecessary_null_checks, join_return_with_assignment, prefer_final_locals, avoid_js_rounded_ints, avoid_positional_boolean_parameters, always_specify_types
 
 extension GetLinuxDeviceAssetCollection on Isar {
-  IsarCollection<LinuxDeviceAsset> get linuxDeviceAssets => this.collection();
+  IsarCollection<DesktopDeviceAsset> get desktopDeviceAssets =>
+      this.collection();
 }
 
 const LinuxDeviceAssetSchema = CollectionSchema(
@@ -70,7 +71,7 @@ const LinuxDeviceAssetSchema = CollectionSchema(
 );
 
 int _linuxDeviceAssetEstimateSize(
-  LinuxDeviceAsset object,
+  DesktopDeviceAsset object,
   List<int> offsets,
   Map<Type, List<int>> allOffsets,
 ) {
@@ -81,7 +82,7 @@ int _linuxDeviceAssetEstimateSize(
 }
 
 void _linuxDeviceAssetSerialize(
-  LinuxDeviceAsset object,
+  DesktopDeviceAsset object,
   IsarWriter writer,
   List<int> offsets,
   Map<Type, List<int>> allOffsets,
@@ -90,13 +91,13 @@ void _linuxDeviceAssetSerialize(
   writer.writeString(offsets[1], object.id);
 }
 
-LinuxDeviceAsset _linuxDeviceAssetDeserialize(
+DesktopDeviceAsset _linuxDeviceAssetDeserialize(
   Id id,
   IsarReader reader,
   List<int> offsets,
   Map<Type, List<int>> allOffsets,
 ) {
-  final object = LinuxDeviceAsset(
+  final object = DesktopDeviceAsset(
     hash: reader.readByteList(offsets[0]) ?? [],
     id: reader.readString(offsets[1]),
   );
@@ -119,23 +120,24 @@ P _linuxDeviceAssetDeserializeProp<P>(
   }
 }
 
-Id _linuxDeviceAssetGetId(LinuxDeviceAsset object) {
+Id _linuxDeviceAssetGetId(DesktopDeviceAsset object) {
   return object.isarId;
 }
 
-List<IsarLinkBase<dynamic>> _linuxDeviceAssetGetLinks(LinuxDeviceAsset object) {
+List<IsarLinkBase<dynamic>> _linuxDeviceAssetGetLinks(
+    DesktopDeviceAsset object) {
   return [];
 }
 
 void _linuxDeviceAssetAttach(
-    IsarCollection<dynamic> col, Id id, LinuxDeviceAsset object) {}
+    IsarCollection<dynamic> col, Id id, DesktopDeviceAsset object) {}
 
-extension LinuxDeviceAssetByIndex on IsarCollection<LinuxDeviceAsset> {
-  Future<LinuxDeviceAsset?> getById(String id) {
+extension LinuxDeviceAssetByIndex on IsarCollection<DesktopDeviceAsset> {
+  Future<DesktopDeviceAsset?> getById(String id) {
     return getByIndex(r'id', [id]);
   }
 
-  LinuxDeviceAsset? getByIdSync(String id) {
+  DesktopDeviceAsset? getByIdSync(String id) {
     return getByIndexSync(r'id', [id]);
   }
 
@@ -147,12 +149,12 @@ extension LinuxDeviceAssetByIndex on IsarCollection<LinuxDeviceAsset> {
     return deleteByIndexSync(r'id', [id]);
   }
 
-  Future<List<LinuxDeviceAsset?>> getAllById(List<String> idValues) {
+  Future<List<DesktopDeviceAsset?>> getAllById(List<String> idValues) {
     final values = idValues.map((e) => [e]).toList();
     return getAllByIndex(r'id', values);
   }
 
-  List<LinuxDeviceAsset?> getAllByIdSync(List<String> idValues) {
+  List<DesktopDeviceAsset?> getAllByIdSync(List<String> idValues) {
     final values = idValues.map((e) => [e]).toList();
     return getAllByIndexSync(r'id', values);
   }
@@ -167,27 +169,28 @@ extension LinuxDeviceAssetByIndex on IsarCollection<LinuxDeviceAsset> {
     return deleteAllByIndexSync(r'id', values);
   }
 
-  Future<Id> putById(LinuxDeviceAsset object) {
+  Future<Id> putById(DesktopDeviceAsset object) {
     return putByIndex(r'id', object);
   }
 
-  Id putByIdSync(LinuxDeviceAsset object, {bool saveLinks = true}) {
+  Id putByIdSync(DesktopDeviceAsset object, {bool saveLinks = true}) {
     return putByIndexSync(r'id', object, saveLinks: saveLinks);
   }
 
-  Future<List<Id>> putAllById(List<LinuxDeviceAsset> objects) {
+  Future<List<Id>> putAllById(List<DesktopDeviceAsset> objects) {
     return putAllByIndex(r'id', objects);
   }
 
-  List<Id> putAllByIdSync(List<LinuxDeviceAsset> objects,
+  List<Id> putAllByIdSync(List<DesktopDeviceAsset> objects,
       {bool saveLinks = true}) {
     return putAllByIndexSync(r'id', objects, saveLinks: saveLinks);
   }
 }
 
 extension LinuxDeviceAssetQueryWhereSort
-    on QueryBuilder<LinuxDeviceAsset, LinuxDeviceAsset, QWhere> {
-  QueryBuilder<LinuxDeviceAsset, LinuxDeviceAsset, QAfterWhere> anyIsarId() {
+    on QueryBuilder<DesktopDeviceAsset, DesktopDeviceAsset, QWhere> {
+  QueryBuilder<DesktopDeviceAsset, DesktopDeviceAsset, QAfterWhere>
+      anyIsarId() {
     return QueryBuilder.apply(this, (query) {
       return query.addWhereClause(const IdWhereClause.any());
     });
@@ -195,8 +198,8 @@ extension LinuxDeviceAssetQueryWhereSort
 }
 
 extension LinuxDeviceAssetQueryWhere
-    on QueryBuilder<LinuxDeviceAsset, LinuxDeviceAsset, QWhereClause> {
-  QueryBuilder<LinuxDeviceAsset, LinuxDeviceAsset, QAfterWhereClause>
+    on QueryBuilder<DesktopDeviceAsset, DesktopDeviceAsset, QWhereClause> {
+  QueryBuilder<DesktopDeviceAsset, DesktopDeviceAsset, QAfterWhereClause>
       isarIdEqualTo(Id isarId) {
     return QueryBuilder.apply(this, (query) {
       return query.addWhereClause(IdWhereClause.between(
@@ -206,7 +209,7 @@ extension LinuxDeviceAssetQueryWhere
     });
   }
 
-  QueryBuilder<LinuxDeviceAsset, LinuxDeviceAsset, QAfterWhereClause>
+  QueryBuilder<DesktopDeviceAsset, DesktopDeviceAsset, QAfterWhereClause>
       isarIdNotEqualTo(Id isarId) {
     return QueryBuilder.apply(this, (query) {
       if (query.whereSort == Sort.asc) {
@@ -229,7 +232,7 @@ extension LinuxDeviceAssetQueryWhere
     });
   }
 
-  QueryBuilder<LinuxDeviceAsset, LinuxDeviceAsset, QAfterWhereClause>
+  QueryBuilder<DesktopDeviceAsset, DesktopDeviceAsset, QAfterWhereClause>
       isarIdGreaterThan(Id isarId, {bool include = false}) {
     return QueryBuilder.apply(this, (query) {
       return query.addWhereClause(
@@ -238,7 +241,7 @@ extension LinuxDeviceAssetQueryWhere
     });
   }
 
-  QueryBuilder<LinuxDeviceAsset, LinuxDeviceAsset, QAfterWhereClause>
+  QueryBuilder<DesktopDeviceAsset, DesktopDeviceAsset, QAfterWhereClause>
       isarIdLessThan(Id isarId, {bool include = false}) {
     return QueryBuilder.apply(this, (query) {
       return query.addWhereClause(
@@ -247,7 +250,7 @@ extension LinuxDeviceAssetQueryWhere
     });
   }
 
-  QueryBuilder<LinuxDeviceAsset, LinuxDeviceAsset, QAfterWhereClause>
+  QueryBuilder<DesktopDeviceAsset, DesktopDeviceAsset, QAfterWhereClause>
       isarIdBetween(
     Id lowerIsarId,
     Id upperIsarId, {
@@ -264,8 +267,8 @@ extension LinuxDeviceAssetQueryWhere
     });
   }
 
-  QueryBuilder<LinuxDeviceAsset, LinuxDeviceAsset, QAfterWhereClause> idEqualTo(
-      String id) {
+  QueryBuilder<DesktopDeviceAsset, DesktopDeviceAsset, QAfterWhereClause>
+      idEqualTo(String id) {
     return QueryBuilder.apply(this, (query) {
       return query.addWhereClause(IndexWhereClause.equalTo(
         indexName: r'id',
@@ -274,7 +277,7 @@ extension LinuxDeviceAssetQueryWhere
     });
   }
 
-  QueryBuilder<LinuxDeviceAsset, LinuxDeviceAsset, QAfterWhereClause>
+  QueryBuilder<DesktopDeviceAsset, DesktopDeviceAsset, QAfterWhereClause>
       idNotEqualTo(String id) {
     return QueryBuilder.apply(this, (query) {
       if (query.whereSort == Sort.asc) {
@@ -309,7 +312,7 @@ extension LinuxDeviceAssetQueryWhere
     });
   }
 
-  QueryBuilder<LinuxDeviceAsset, LinuxDeviceAsset, QAfterWhereClause>
+  QueryBuilder<DesktopDeviceAsset, DesktopDeviceAsset, QAfterWhereClause>
       hashEqualTo(List<int> hash) {
     return QueryBuilder.apply(this, (query) {
       return query.addWhereClause(IndexWhereClause.equalTo(
@@ -319,7 +322,7 @@ extension LinuxDeviceAssetQueryWhere
     });
   }
 
-  QueryBuilder<LinuxDeviceAsset, LinuxDeviceAsset, QAfterWhereClause>
+  QueryBuilder<DesktopDeviceAsset, DesktopDeviceAsset, QAfterWhereClause>
       hashNotEqualTo(List<int> hash) {
     return QueryBuilder.apply(this, (query) {
       if (query.whereSort == Sort.asc) {
@@ -356,8 +359,8 @@ extension LinuxDeviceAssetQueryWhere
 }
 
 extension LinuxDeviceAssetQueryFilter
-    on QueryBuilder<LinuxDeviceAsset, LinuxDeviceAsset, QFilterCondition> {
-  QueryBuilder<LinuxDeviceAsset, LinuxDeviceAsset, QAfterFilterCondition>
+    on QueryBuilder<DesktopDeviceAsset, DesktopDeviceAsset, QFilterCondition> {
+  QueryBuilder<DesktopDeviceAsset, DesktopDeviceAsset, QAfterFilterCondition>
       hashElementEqualTo(int value) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.equalTo(
@@ -367,7 +370,7 @@ extension LinuxDeviceAssetQueryFilter
     });
   }
 
-  QueryBuilder<LinuxDeviceAsset, LinuxDeviceAsset, QAfterFilterCondition>
+  QueryBuilder<DesktopDeviceAsset, DesktopDeviceAsset, QAfterFilterCondition>
       hashElementGreaterThan(
     int value, {
     bool include = false,
@@ -381,7 +384,7 @@ extension LinuxDeviceAssetQueryFilter
     });
   }
 
-  QueryBuilder<LinuxDeviceAsset, LinuxDeviceAsset, QAfterFilterCondition>
+  QueryBuilder<DesktopDeviceAsset, DesktopDeviceAsset, QAfterFilterCondition>
       hashElementLessThan(
     int value, {
     bool include = false,
@@ -395,7 +398,7 @@ extension LinuxDeviceAssetQueryFilter
     });
   }
 
-  QueryBuilder<LinuxDeviceAsset, LinuxDeviceAsset, QAfterFilterCondition>
+  QueryBuilder<DesktopDeviceAsset, DesktopDeviceAsset, QAfterFilterCondition>
       hashElementBetween(
     int lower,
     int upper, {
@@ -413,7 +416,7 @@ extension LinuxDeviceAssetQueryFilter
     });
   }
 
-  QueryBuilder<LinuxDeviceAsset, LinuxDeviceAsset, QAfterFilterCondition>
+  QueryBuilder<DesktopDeviceAsset, DesktopDeviceAsset, QAfterFilterCondition>
       hashLengthEqualTo(int length) {
     return QueryBuilder.apply(this, (query) {
       return query.listLength(
@@ -426,7 +429,7 @@ extension LinuxDeviceAssetQueryFilter
     });
   }
 
-  QueryBuilder<LinuxDeviceAsset, LinuxDeviceAsset, QAfterFilterCondition>
+  QueryBuilder<DesktopDeviceAsset, DesktopDeviceAsset, QAfterFilterCondition>
       hashIsEmpty() {
     return QueryBuilder.apply(this, (query) {
       return query.listLength(
@@ -439,7 +442,7 @@ extension LinuxDeviceAssetQueryFilter
     });
   }
 
-  QueryBuilder<LinuxDeviceAsset, LinuxDeviceAsset, QAfterFilterCondition>
+  QueryBuilder<DesktopDeviceAsset, DesktopDeviceAsset, QAfterFilterCondition>
       hashIsNotEmpty() {
     return QueryBuilder.apply(this, (query) {
       return query.listLength(
@@ -452,7 +455,7 @@ extension LinuxDeviceAssetQueryFilter
     });
   }
 
-  QueryBuilder<LinuxDeviceAsset, LinuxDeviceAsset, QAfterFilterCondition>
+  QueryBuilder<DesktopDeviceAsset, DesktopDeviceAsset, QAfterFilterCondition>
       hashLengthLessThan(
     int length, {
     bool include = false,
@@ -468,7 +471,7 @@ extension LinuxDeviceAssetQueryFilter
     });
   }
 
-  QueryBuilder<LinuxDeviceAsset, LinuxDeviceAsset, QAfterFilterCondition>
+  QueryBuilder<DesktopDeviceAsset, DesktopDeviceAsset, QAfterFilterCondition>
       hashLengthGreaterThan(
     int length, {
     bool include = false,
@@ -484,7 +487,7 @@ extension LinuxDeviceAssetQueryFilter
     });
   }
 
-  QueryBuilder<LinuxDeviceAsset, LinuxDeviceAsset, QAfterFilterCondition>
+  QueryBuilder<DesktopDeviceAsset, DesktopDeviceAsset, QAfterFilterCondition>
       hashLengthBetween(
     int lower,
     int upper, {
@@ -502,7 +505,7 @@ extension LinuxDeviceAssetQueryFilter
     });
   }
 
-  QueryBuilder<LinuxDeviceAsset, LinuxDeviceAsset, QAfterFilterCondition>
+  QueryBuilder<DesktopDeviceAsset, DesktopDeviceAsset, QAfterFilterCondition>
       idEqualTo(
     String value, {
     bool caseSensitive = true,
@@ -516,7 +519,7 @@ extension LinuxDeviceAssetQueryFilter
     });
   }
 
-  QueryBuilder<LinuxDeviceAsset, LinuxDeviceAsset, QAfterFilterCondition>
+  QueryBuilder<DesktopDeviceAsset, DesktopDeviceAsset, QAfterFilterCondition>
       idGreaterThan(
     String value, {
     bool include = false,
@@ -532,7 +535,7 @@ extension LinuxDeviceAssetQueryFilter
     });
   }
 
-  QueryBuilder<LinuxDeviceAsset, LinuxDeviceAsset, QAfterFilterCondition>
+  QueryBuilder<DesktopDeviceAsset, DesktopDeviceAsset, QAfterFilterCondition>
       idLessThan(
     String value, {
     bool include = false,
@@ -548,7 +551,7 @@ extension LinuxDeviceAssetQueryFilter
     });
   }
 
-  QueryBuilder<LinuxDeviceAsset, LinuxDeviceAsset, QAfterFilterCondition>
+  QueryBuilder<DesktopDeviceAsset, DesktopDeviceAsset, QAfterFilterCondition>
       idBetween(
     String lower,
     String upper, {
@@ -568,7 +571,7 @@ extension LinuxDeviceAssetQueryFilter
     });
   }
 
-  QueryBuilder<LinuxDeviceAsset, LinuxDeviceAsset, QAfterFilterCondition>
+  QueryBuilder<DesktopDeviceAsset, DesktopDeviceAsset, QAfterFilterCondition>
       idStartsWith(
     String value, {
     bool caseSensitive = true,
@@ -582,7 +585,7 @@ extension LinuxDeviceAssetQueryFilter
     });
   }
 
-  QueryBuilder<LinuxDeviceAsset, LinuxDeviceAsset, QAfterFilterCondition>
+  QueryBuilder<DesktopDeviceAsset, DesktopDeviceAsset, QAfterFilterCondition>
       idEndsWith(
     String value, {
     bool caseSensitive = true,
@@ -596,7 +599,7 @@ extension LinuxDeviceAssetQueryFilter
     });
   }
 
-  QueryBuilder<LinuxDeviceAsset, LinuxDeviceAsset, QAfterFilterCondition>
+  QueryBuilder<DesktopDeviceAsset, DesktopDeviceAsset, QAfterFilterCondition>
       idContains(String value, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.contains(
@@ -607,7 +610,7 @@ extension LinuxDeviceAssetQueryFilter
     });
   }
 
-  QueryBuilder<LinuxDeviceAsset, LinuxDeviceAsset, QAfterFilterCondition>
+  QueryBuilder<DesktopDeviceAsset, DesktopDeviceAsset, QAfterFilterCondition>
       idMatches(String pattern, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.matches(
@@ -618,7 +621,7 @@ extension LinuxDeviceAssetQueryFilter
     });
   }
 
-  QueryBuilder<LinuxDeviceAsset, LinuxDeviceAsset, QAfterFilterCondition>
+  QueryBuilder<DesktopDeviceAsset, DesktopDeviceAsset, QAfterFilterCondition>
       idIsEmpty() {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.equalTo(
@@ -628,7 +631,7 @@ extension LinuxDeviceAssetQueryFilter
     });
   }
 
-  QueryBuilder<LinuxDeviceAsset, LinuxDeviceAsset, QAfterFilterCondition>
+  QueryBuilder<DesktopDeviceAsset, DesktopDeviceAsset, QAfterFilterCondition>
       idIsNotEmpty() {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.greaterThan(
@@ -638,7 +641,7 @@ extension LinuxDeviceAssetQueryFilter
     });
   }
 
-  QueryBuilder<LinuxDeviceAsset, LinuxDeviceAsset, QAfterFilterCondition>
+  QueryBuilder<DesktopDeviceAsset, DesktopDeviceAsset, QAfterFilterCondition>
       isarIdEqualTo(Id value) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.equalTo(
@@ -648,7 +651,7 @@ extension LinuxDeviceAssetQueryFilter
     });
   }
 
-  QueryBuilder<LinuxDeviceAsset, LinuxDeviceAsset, QAfterFilterCondition>
+  QueryBuilder<DesktopDeviceAsset, DesktopDeviceAsset, QAfterFilterCondition>
       isarIdGreaterThan(
     Id value, {
     bool include = false,
@@ -662,7 +665,7 @@ extension LinuxDeviceAssetQueryFilter
     });
   }
 
-  QueryBuilder<LinuxDeviceAsset, LinuxDeviceAsset, QAfterFilterCondition>
+  QueryBuilder<DesktopDeviceAsset, DesktopDeviceAsset, QAfterFilterCondition>
       isarIdLessThan(
     Id value, {
     bool include = false,
@@ -676,7 +679,7 @@ extension LinuxDeviceAssetQueryFilter
     });
   }
 
-  QueryBuilder<LinuxDeviceAsset, LinuxDeviceAsset, QAfterFilterCondition>
+  QueryBuilder<DesktopDeviceAsset, DesktopDeviceAsset, QAfterFilterCondition>
       isarIdBetween(
     Id lower,
     Id upper, {
@@ -696,20 +699,21 @@ extension LinuxDeviceAssetQueryFilter
 }
 
 extension LinuxDeviceAssetQueryObject
-    on QueryBuilder<LinuxDeviceAsset, LinuxDeviceAsset, QFilterCondition> {}
+    on QueryBuilder<DesktopDeviceAsset, DesktopDeviceAsset, QFilterCondition> {}
 
 extension LinuxDeviceAssetQueryLinks
-    on QueryBuilder<LinuxDeviceAsset, LinuxDeviceAsset, QFilterCondition> {}
+    on QueryBuilder<DesktopDeviceAsset, DesktopDeviceAsset, QFilterCondition> {}
 
 extension LinuxDeviceAssetQuerySortBy
-    on QueryBuilder<LinuxDeviceAsset, LinuxDeviceAsset, QSortBy> {
-  QueryBuilder<LinuxDeviceAsset, LinuxDeviceAsset, QAfterSortBy> sortById() {
+    on QueryBuilder<DesktopDeviceAsset, DesktopDeviceAsset, QSortBy> {
+  QueryBuilder<DesktopDeviceAsset, DesktopDeviceAsset, QAfterSortBy>
+      sortById() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'id', Sort.asc);
     });
   }
 
-  QueryBuilder<LinuxDeviceAsset, LinuxDeviceAsset, QAfterSortBy>
+  QueryBuilder<DesktopDeviceAsset, DesktopDeviceAsset, QAfterSortBy>
       sortByIdDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'id', Sort.desc);
@@ -718,28 +722,29 @@ extension LinuxDeviceAssetQuerySortBy
 }
 
 extension LinuxDeviceAssetQuerySortThenBy
-    on QueryBuilder<LinuxDeviceAsset, LinuxDeviceAsset, QSortThenBy> {
-  QueryBuilder<LinuxDeviceAsset, LinuxDeviceAsset, QAfterSortBy> thenById() {
+    on QueryBuilder<DesktopDeviceAsset, DesktopDeviceAsset, QSortThenBy> {
+  QueryBuilder<DesktopDeviceAsset, DesktopDeviceAsset, QAfterSortBy>
+      thenById() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'id', Sort.asc);
     });
   }
 
-  QueryBuilder<LinuxDeviceAsset, LinuxDeviceAsset, QAfterSortBy>
+  QueryBuilder<DesktopDeviceAsset, DesktopDeviceAsset, QAfterSortBy>
       thenByIdDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'id', Sort.desc);
     });
   }
 
-  QueryBuilder<LinuxDeviceAsset, LinuxDeviceAsset, QAfterSortBy>
+  QueryBuilder<DesktopDeviceAsset, DesktopDeviceAsset, QAfterSortBy>
       thenByIsarId() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'isarId', Sort.asc);
     });
   }
 
-  QueryBuilder<LinuxDeviceAsset, LinuxDeviceAsset, QAfterSortBy>
+  QueryBuilder<DesktopDeviceAsset, DesktopDeviceAsset, QAfterSortBy>
       thenByIsarIdDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'isarId', Sort.desc);
@@ -748,14 +753,15 @@ extension LinuxDeviceAssetQuerySortThenBy
 }
 
 extension LinuxDeviceAssetQueryWhereDistinct
-    on QueryBuilder<LinuxDeviceAsset, LinuxDeviceAsset, QDistinct> {
-  QueryBuilder<LinuxDeviceAsset, LinuxDeviceAsset, QDistinct> distinctByHash() {
+    on QueryBuilder<DesktopDeviceAsset, DesktopDeviceAsset, QDistinct> {
+  QueryBuilder<DesktopDeviceAsset, DesktopDeviceAsset, QDistinct>
+      distinctByHash() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'hash');
     });
   }
 
-  QueryBuilder<LinuxDeviceAsset, LinuxDeviceAsset, QDistinct> distinctById(
+  QueryBuilder<DesktopDeviceAsset, DesktopDeviceAsset, QDistinct> distinctById(
       {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'id', caseSensitive: caseSensitive);
@@ -764,20 +770,20 @@ extension LinuxDeviceAssetQueryWhereDistinct
 }
 
 extension LinuxDeviceAssetQueryProperty
-    on QueryBuilder<LinuxDeviceAsset, LinuxDeviceAsset, QQueryProperty> {
-  QueryBuilder<LinuxDeviceAsset, int, QQueryOperations> isarIdProperty() {
+    on QueryBuilder<DesktopDeviceAsset, DesktopDeviceAsset, QQueryProperty> {
+  QueryBuilder<DesktopDeviceAsset, int, QQueryOperations> isarIdProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'isarId');
     });
   }
 
-  QueryBuilder<LinuxDeviceAsset, List<int>, QQueryOperations> hashProperty() {
+  QueryBuilder<DesktopDeviceAsset, List<int>, QQueryOperations> hashProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'hash');
     });
   }
 
-  QueryBuilder<LinuxDeviceAsset, String, QQueryOperations> idProperty() {
+  QueryBuilder<DesktopDeviceAsset, String, QQueryOperations> idProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'id');
     });

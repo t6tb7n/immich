@@ -316,7 +316,7 @@ class BackupService {
           if (asset.type == AssetType.video) {
             file = await asset.local!.originFile;
           } else {
-            if (Platform.isLinux) {
+            if (Platform.isLinux || Platform.isWindows) {
               file = File(asset.fileName);
             } else {
               file = await asset.local!.originFile

@@ -5,8 +5,8 @@ import 'package:isar/isar.dart';
 part 'linux_device_asset.entity.g.dart';
 
 @Collection()
-class LinuxDeviceAsset extends DeviceAsset {
-  LinuxDeviceAsset({required this.id, required super.hash});
+class DesktopDeviceAsset extends DeviceAsset {
+  DesktopDeviceAsset({required this.id, required super.hash});
 
   @Index(replace: true, unique: true, type: IndexType.hash)
   String id;

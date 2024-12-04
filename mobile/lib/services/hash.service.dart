@@ -62,7 +62,7 @@ class HashService {
         return a.localId!.toInt();
       } else if (Platform.isIOS) {
         return a.localId!;
-      } else if (Platform.isLinux) {
+      } else if (Platform.isLinux || Platform.isWindows) {
         return a.localId!;
       } else {
         throw UnsupportedError("Unsupported platform");
@@ -85,7 +85,7 @@ class HashService {
       try {
         if (Platform.isAndroid || Platform.isIOS) {
           file = await assets[i].local!.originFile;
-        } else if (Platform.isLinux) {
+        } else if (Platform.isLinux || Platform.isWindows) {
           file = File(assets[i].localId!);
         }
       } catch (error, stackTrace) {
@@ -111,8 +111,8 @@ class HashService {
           return AndroidDeviceAsset(id: ids[i] as int, hash: const []);
         } else if (Platform.isIOS) {
           return IOSDeviceAsset(id: ids[i] as String, hash: const []);
-        } else if (Platform.isLinux) {
-          return LinuxDeviceAsset(id: ids[i] as String, hash: const []);
+        } else if (Platform.isLinux || Platform.isWindows) {
+          return DesktopDeviceAsset(id: ids[i] as String, hash: const []);
         } else {
           throw UnsupportedError('Unsupported platform');
         }

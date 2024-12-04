@@ -169,6 +169,8 @@ class ApiService implements Authentication {
       authenticationApi.apiClient.addDefaultHeader('deviceType', 'Android');
     } else if (Platform.isLinux) {
       authenticationApi.apiClient.addDefaultHeader('deviceType', 'Linux');
+    } else if (Platform.isWindows) {
+      authenticationApi.apiClient.addDefaultHeader('deviceType', 'Windows');
     }
   }
 

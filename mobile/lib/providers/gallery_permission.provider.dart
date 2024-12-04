@@ -101,7 +101,7 @@ class GalleryPermissionNotifier extends StateNotifier<PermissionStatus> {
       // iOS can use photos
       final photos = await Permission.photos.status;
       result = photos;
-    } else if (Platform.isLinux) {
+    } else if (Platform.isLinux || Platform.isWindows) {
       result = PermissionStatus.granted;
     } else {
       throw UnsupportedError("Unsupported platform");

@@ -128,6 +128,7 @@ Future<Isar> loadDb() async {
       if (Platform.isAndroid) AndroidDeviceAssetSchema,
       if (Platform.isIOS) IOSDeviceAssetSchema,
       if (Platform.isLinux) LinuxDeviceAssetSchema,
+      if (Platform.isWindows) LinuxDeviceAssetSchema,
     ],
     directory: dir.path,
     maxSizeMiB: 1024,

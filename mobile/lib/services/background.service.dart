@@ -162,7 +162,7 @@ class BackgroundService {
   }
 
   Future<List<Uint8List?>?> digestFiles(List<String> paths) {
-    if (Platform.isLinux) {
+    if (Platform.isLinux || Platform.isWindows) {
       return (() async {
         List<Uint8List?> r = [];
         for (final p in paths) {
@@ -390,11 +390,11 @@ class BackgroundService {
     IAlbumMediaRepository albumMediaRepository =
         Platform.isAndroid || Platform.isIOS
             ? AlbumMediaRepository()
-            : LinuxAlbumMediaRepository();
+            : DesktopAlbumMediaRepository();
     IFileMediaRepository fileMediaRepository =
         Platform.isAndroid || Platform.isIOS
             ? FileMediaRepository()
-            : LinuxFileMediaRepository();
+            : DesktopFileMediaRepository();
     UserRepository userRepository = UserRepository(db);
     AssetMediaRepository assetMediaRepository = AssetMediaRepository();
     UserApiRepository userApiRepository =

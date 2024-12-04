@@ -12,7 +12,9 @@ import 'package:photo_manager/photo_manager.dart' hide AssetType;
 import 'package:crypto/crypto.dart';
 
 final albumMediaRepositoryProvider = Provider((ref) =>
-    Platform.isLinux ? LinuxAlbumMediaRepository() : AlbumMediaRepository());
+    (Platform.isLinux || Platform.isWindows)
+        ? DesktopAlbumMediaRepository()
+        : AlbumMediaRepository());
 
 class AlbumMediaRepository implements IAlbumMediaRepository {
   @override
@@ -98,12 +100,17 @@ class AlbumMediaRepository implements IAlbumMediaRepository {
   }
 }
 
-class LinuxAlbumMediaRepository implements IAlbumMediaRepository {
+class DesktopAlbumMediaRepository implements IAlbumMediaRepository {
   Future<String> getDefaultAlbumPath() async {
-    return (await Process.run('xdg-user-dir', ['PICTURES']))
-        .stdout
-        .toString()
-        .trim();
+    if (Platform.isLinux) {
+      return (await Process.run('xdg-user-dir', ['PICTURES']))
+          .stdout
+          .toString()
+          .trim();
+    } else {
+      final user = Platform.environment["UserProfile"]!;
+      return '$user\\Pictures';
+    }
   }
 
   Future<Album> getDefaultAlbum() async {

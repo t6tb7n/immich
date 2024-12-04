@@ -6,7 +6,7 @@ import 'package:permission_handler/permission_handler.dart';
 class NotificationPermissionNotifier extends StateNotifier<PermissionStatus> {
   NotificationPermissionNotifier()
       : super(
-          Platform.isAndroid || Platform.isLinux
+          Platform.isAndroid || Platform.isLinux || Platform.isWindows
               ? PermissionStatus.granted
               : PermissionStatus.restricted,
         ) {
@@ -29,7 +29,7 @@ class NotificationPermissionNotifier extends StateNotifier<PermissionStatus> {
   }
 
   Future<PermissionStatus> getNotificationPermission() async {
-    if (Platform.isLinux) {
+    if (Platform.isLinux || Platform.isWindows) {
       final status = PermissionStatus.granted;
       state = status;
       return status;

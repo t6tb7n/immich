@@ -57,7 +57,7 @@ class ImmichLocalThumbnailProvider
   ) async* {
     // Load a small thumbnail
     Uint8List? thumbBytes;
-    if (Platform.isLinux) {
+    if (Platform.isLinux || Platform.isWindows) {
       final bytes = await File(asset.localId!).readAsBytes();
       final image = decodeImage(bytes);
       if (image != null) {
@@ -83,7 +83,7 @@ class ImmichLocalThumbnailProvider
     }
 
     Uint8List? normalThumbBytes;
-    if (Platform.isLinux) {
+    if (Platform.isLinux || Platform.isWindows) {
       final bytes = await File(asset.localId!).readAsBytes();
       final image = decodeImage(bytes);
       if (image != null) {
