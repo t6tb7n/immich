@@ -92,6 +92,26 @@ class PhotosPage extends HookConsumerWidget {
       }
     }
 
+    buildRefreshIndicator() {
+      // final indicatorIcon = getBackupBadgeIcon();
+      // final badgeBackground = context.colorScheme.surfaceContainer;
+      const widgetSize = 30.0;
+      return InkWell(
+        onTap: () => refreshAssets(),
+        borderRadius: BorderRadius.circular(12),
+        child: Badge(
+          backgroundColor: Colors.transparent,
+          alignment: Alignment.bottomRight,
+          offset: const Offset(-2, -12),
+          child: Icon(
+            Icons.refresh,
+            size: widgetSize,
+            color: context.primaryColor,
+          ),
+        ),
+      );
+    }
+
     return Stack(
       children: [
         MultiselectGrid(
@@ -117,7 +137,7 @@ class PhotosPage extends HookConsumerWidget {
           child: Container(
             height: kToolbarHeight + context.padding.top,
             color: context.themeData.appBarTheme.backgroundColor,
-            child: const ImmichAppBar(),
+            child: ImmichAppBar(actions: [buildRefreshIndicator()]),
           ),
         ),
       ],

@@ -32,9 +32,11 @@ class LocalNotificationService {
     const androidSetting =
         AndroidInitializationSettings('@drawable/notification_icon');
     const iosSetting = DarwinInitializationSettings();
+    const linuxSetting = LinuxInitializationSettings(
+        defaultActionName: '@drawable/notification_icon');
 
-    const initSettings =
-        InitializationSettings(android: androidSetting, iOS: iosSetting);
+    const initSettings = InitializationSettings(
+        android: androidSetting, iOS: iosSetting, linux: linuxSetting);
 
     await _localNotificationPlugin.initialize(
       initSettings,

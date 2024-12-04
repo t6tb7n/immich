@@ -162,11 +162,13 @@ class ApiService implements Authentication {
       authenticationApi.apiClient
           .addDefaultHeader('deviceModel', iosInfo.utsname.machine);
       authenticationApi.apiClient.addDefaultHeader('deviceType', 'iOS');
-    } else {
+    } else if (Platform.isAndroid) {
       final androidInfo = await deviceInfoPlugin.androidInfo;
       authenticationApi.apiClient
           .addDefaultHeader('deviceModel', androidInfo.model);
       authenticationApi.apiClient.addDefaultHeader('deviceType', 'Android');
+    } else if (Platform.isLinux) {
+      authenticationApi.apiClient.addDefaultHeader('deviceType', 'Linux');
     }
   }
 

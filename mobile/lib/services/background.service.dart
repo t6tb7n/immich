@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:developer';
 import 'dart:io';
 import 'dart:isolate';
+import 'dart:typed_data';
 import 'dart:ui' show DartPluginRegistrant, IsolateNameServer, PluginUtilities;
 import 'package:cancellation_token_http/http.dart';
 import 'package:collection/collection.dart';
@@ -14,6 +15,7 @@ import 'package:immich_mobile/main.dart';
 import 'package:immich_mobile/models/backup/backup_candidate.model.dart';
 import 'package:immich_mobile/models/backup/success_upload_asset.model.dart';
 import 'package:immich_mobile/repositories/album.repository.dart';
+import 'package:immich_mobile/interfaces/album_media.interface.dart';
 import 'package:immich_mobile/repositories/album_api.repository.dart';
 import 'package:immich_mobile/repositories/asset.repository.dart';
 import 'package:immich_mobile/repositories/asset_media.repository.dart';
@@ -22,6 +24,7 @@ import 'package:immich_mobile/repositories/album_media.repository.dart';
 import 'package:immich_mobile/repositories/etag.repository.dart';
 import 'package:immich_mobile/repositories/exif_info.repository.dart';
 import 'package:immich_mobile/repositories/file_media.repository.dart';
+import 'package:immich_mobile/interfaces/file_media.interface.dart';
 import 'package:immich_mobile/repositories/partner_api.repository.dart';
 import 'package:immich_mobile/repositories/user.repository.dart';
 import 'package:immich_mobile/repositories/user_api.repository.dart';
@@ -43,6 +46,7 @@ import 'package:immich_mobile/utils/diff.dart';
 import 'package:immich_mobile/utils/http_ssl_cert_override.dart';
 import 'package:path_provider_ios/path_provider_ios.dart';
 import 'package:photo_manager/photo_manager.dart' show PMProgressHandler;
+import 'package:crypto/crypto.dart';
 
 final backgroundServiceProvider = Provider(
   (ref) => BackgroundService(),
@@ -158,10 +162,22 @@ class BackgroundService {
   }
 
   Future<List<Uint8List?>?> digestFiles(List<String> paths) {
-    return _foregroundChannel.invokeListMethod<Uint8List?>(
-      "digestFiles",
-      paths,
-    );
+    if (Platform.isLinux) {
+      return (() async {
+        List<Uint8List?> r = [];
+        for (final p in paths) {
+          final data = await File(p).readAsBytes();
+          final digest = sha1.convert(data);
+          r.add(Uint8List.fromList(digest.bytes));
+        }
+        return r;
+      })();
+    } else {
+      return _foregroundChannel.invokeListMethod<Uint8List?>(
+        "digestFiles",
+        paths,
+      );
+    }
   }
 
   /// Updates the notification shown by the background service
@@ -371,10 +387,16 @@ class BackgroundService {
     BackupRepository backupRepository = BackupRepository(db);
     ExifInfoRepository exifInfoRepository = ExifInfoRepository(db);
     ETagRepository eTagRepository = ETagRepository(db);
-    AlbumMediaRepository albumMediaRepository = AlbumMediaRepository();
-    FileMediaRepository fileMediaRepository = FileMediaRepository();
-    AssetMediaRepository assetMediaRepository = AssetMediaRepository();
+    IAlbumMediaRepository albumMediaRepository =
+        Platform.isAndroid || Platform.isIOS
+            ? AlbumMediaRepository()
+            : LinuxAlbumMediaRepository();
+    IFileMediaRepository fileMediaRepository =
+        Platform.isAndroid || Platform.isIOS
+            ? FileMediaRepository()
+            : LinuxFileMediaRepository();
     UserRepository userRepository = UserRepository(db);
+    AssetMediaRepository assetMediaRepository = AssetMediaRepository();
     UserApiRepository userApiRepository =
         UserApiRepository(apiService.usersApi);
     AlbumApiRepository albumApiRepository =

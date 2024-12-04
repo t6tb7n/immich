@@ -8,6 +8,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/painting.dart';
 import 'package:immich_mobile/entities/asset.entity.dart';
 import 'package:photo_manager/photo_manager.dart' show ThumbnailSize;
+import 'package:image/image.dart';
 
 /// The local image provider for an asset
 class ImmichLocalImageProvider extends ImageProvider<ImmichLocalImageProvider> {
@@ -47,10 +48,21 @@ class ImmichLocalImageProvider extends ImageProvider<ImmichLocalImageProvider> {
     StreamController<ImageChunkEvent> chunkEvents,
   ) async* {
     // Load a small thumbnail
-    final thumbBytes = await asset.local?.thumbnailDataWithSize(
-      const ThumbnailSize.square(256),
-      quality: 80,
-    );
+    Uint8List? thumbBytes;
+    if (Platform.isLinux) {
+      final bytes = await File(asset.localId!).readAsBytes();
+      final image = decodeImage(bytes);
+      if (image != null) {
+        final thumbnail =
+            copyResize(image, width: 256, height: 256, maintainAspect: true);
+        thumbBytes = encodeJpg(thumbnail, quality: 80);
+      }
+    } else {
+      thumbBytes = await asset.local?.thumbnailDataWithSize(
+        const ThumbnailSize.square(256),
+        quality: 80,
+      );
+    }
     if (thumbBytes != null) {
       final buffer = await ui.ImmutableBuffer.fromUint8List(thumbBytes);
       final codec = await decode(buffer);
@@ -60,7 +72,13 @@ class ImmichLocalImageProvider extends ImageProvider<ImmichLocalImageProvider> {
     }
 
     if (asset.isImage) {
-      final File? file = await asset.local?.originFile;
+      File? file;
+      if (Platform.isLinux) {
+        final path = asset.localId;
+        file = path != null ? File(path) : null;
+      } else {
+        file = await asset.local?.originFile;
+      }
       if (file == null) {
         throw StateError("Opening file for asset ${asset.fileName} failed");
       }

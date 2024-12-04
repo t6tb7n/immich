@@ -97,10 +97,14 @@ class GalleryPermissionNotifier extends StateNotifier<PermissionStatus> {
           androidInfo.version.sdkInt >= 29) {
         result = await Permission.accessMediaLocation.status;
       }
-    } else {
+    } else if (Platform.isIOS) {
       // iOS can use photos
       final photos = await Permission.photos.status;
       result = photos;
+    } else if (Platform.isLinux) {
+      result = PermissionStatus.granted;
+    } else {
+      throw UnsupportedError("Unsupported platform");
     }
     state = result;
     return result;

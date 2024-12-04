@@ -9,6 +9,7 @@ import 'package:immich_mobile/repositories/album_media.repository.dart';
 import 'package:immich_mobile/repositories/asset.repository.dart';
 import 'package:immich_mobile/services/background.service.dart';
 import 'package:immich_mobile/entities/android_device_asset.entity.dart';
+import 'package:immich_mobile/entities/linux_device_asset.entity.dart';
 import 'package:immich_mobile/entities/asset.entity.dart';
 import 'package:immich_mobile/entities/device_asset.entity.dart';
 import 'package:immich_mobile/entities/ios_device_asset.entity.dart';
@@ -56,9 +57,17 @@ class HashService {
     const int batchFileCount = 128;
     const int batchDataSize = 1024 * 1024 * 1024; // 1GB
 
-    final ids = assets
-        .map(Platform.isAndroid ? (a) => a.localId!.toInt() : (a) => a.localId!)
-        .toList();
+    final ids = assets.map((a) {
+      if (Platform.isAndroid) {
+        return a.localId!.toInt();
+      } else if (Platform.isIOS) {
+        return a.localId!;
+      } else if (Platform.isLinux) {
+        return a.localId!;
+      } else {
+        throw UnsupportedError("Unsupported platform");
+      }
+    }).toList();
     final List<DeviceAsset?> hashes =
         await _assetRepository.getDeviceAssetsById(ids);
     final List<DeviceAsset> toAdd = [];
@@ -74,7 +83,11 @@ class HashService {
       File? file;
 
       try {
-        file = await assets[i].local!.originFile;
+        if (Platform.isAndroid || Platform.isIOS) {
+          file = await assets[i].local!.originFile;
+        } else if (Platform.isLinux) {
+          file = File(assets[i].localId!);
+        }
       } catch (error, stackTrace) {
         _log.warning(
           "Error getting file to hash for asset ${assets[i].localId}, name: ${assets[i].fileName}, created on: ${assets[i].fileCreatedAt}, skipping",
@@ -93,9 +106,17 @@ class HashService {
       }
       bytes += await file.length();
       toHash.add(file.path);
-      final deviceAsset = Platform.isAndroid
-          ? AndroidDeviceAsset(id: ids[i] as int, hash: const [])
-          : IOSDeviceAsset(id: ids[i] as String, hash: const []);
+      final deviceAsset = (() {
+        if (Platform.isAndroid) {
+          return AndroidDeviceAsset(id: ids[i] as int, hash: const []);
+        } else if (Platform.isIOS) {
+          return IOSDeviceAsset(id: ids[i] as String, hash: const []);
+        } else if (Platform.isLinux) {
+          return LinuxDeviceAsset(id: ids[i] as String, hash: const []);
+        } else {
+          throw UnsupportedError('Unsupported platform');
+        }
+      })();
       toAdd.add(deviceAsset);
       hashes[i] = deviceAsset;
       if (toHash.length == batchFileCount || bytes >= batchDataSize) {

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 import 'dart:ui' as ui;
 
 import 'package:cached_network_image/cached_network_image.dart';
@@ -7,6 +8,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/painting.dart';
 import 'package:immich_mobile/entities/asset.entity.dart';
 import 'package:photo_manager/photo_manager.dart' show ThumbnailSize;
+import 'package:image/image.dart';
 
 /// The local image provider for an asset
 /// Only viable
@@ -54,10 +56,21 @@ class ImmichLocalThumbnailProvider
     StreamController<ImageChunkEvent> chunkEvents,
   ) async* {
     // Load a small thumbnail
-    final thumbBytes = await asset.local?.thumbnailDataWithSize(
-      const ThumbnailSize.square(32),
-      quality: 75,
-    );
+    Uint8List? thumbBytes;
+    if (Platform.isLinux) {
+      final bytes = await File(asset.localId!).readAsBytes();
+      final image = decodeImage(bytes);
+      if (image != null) {
+        final thumbnail =
+            copyResize(image, width: 32, height: 32, maintainAspect: true);
+        thumbBytes = encodeJpg(thumbnail, quality: 75);
+      }
+    } else {
+      thumbBytes = await asset.local?.thumbnailDataWithSize(
+        const ThumbnailSize.square(32),
+        quality: 75,
+      );
+    }
     if (thumbBytes != null) {
       final buffer = await ui.ImmutableBuffer.fromUint8List(thumbBytes);
       final codec = await decode(buffer);
@@ -66,8 +79,19 @@ class ImmichLocalThumbnailProvider
       debugPrint("Loading thumb for ${asset.fileName} failed");
     }
 
-    final normalThumbBytes =
-        await asset.local?.thumbnailDataWithSize(ThumbnailSize(width, height));
+    Uint8List? normalThumbBytes;
+    if (Platform.isLinux) {
+      final bytes = await File(asset.localId!).readAsBytes();
+      final image = decodeImage(bytes);
+      if (image != null) {
+        final thumbnail = copyResize(image,
+            width: width, height: height, maintainAspect: true);
+        normalThumbBytes = encodeJpg(thumbnail, quality: 100);
+      }
+    } else {
+      normalThumbBytes = await asset.local
+          ?.thumbnailDataWithSize(ThumbnailSize(width, height));
+    }
     if (normalThumbBytes == null) {
       throw StateError(
         "Loading thumb for local photo ${asset.fileName} failed",

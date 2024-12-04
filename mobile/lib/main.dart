@@ -23,6 +23,7 @@ import 'package:immich_mobile/routing/tab_navigation_observer.dart';
 import 'package:immich_mobile/utils/cache/widgets_binding.dart';
 import 'package:immich_mobile/entities/album.entity.dart';
 import 'package:immich_mobile/entities/android_device_asset.entity.dart';
+import 'package:immich_mobile/entities/linux_device_asset.entity.dart';
 import 'package:immich_mobile/entities/asset.entity.dart';
 import 'package:immich_mobile/entities/etag.entity.dart';
 import 'package:immich_mobile/entities/exif_info.entity.dart';
@@ -126,6 +127,7 @@ Future<Isar> loadDb() async {
       ETagSchema,
       if (Platform.isAndroid) AndroidDeviceAssetSchema,
       if (Platform.isIOS) IOSDeviceAssetSchema,
+      if (Platform.isLinux) LinuxDeviceAssetSchema,
     ],
     directory: dir.path,
     maxSizeMiB: 1024,

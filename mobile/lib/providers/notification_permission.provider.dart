@@ -6,7 +6,7 @@ import 'package:permission_handler/permission_handler.dart';
 class NotificationPermissionNotifier extends StateNotifier<PermissionStatus> {
   NotificationPermissionNotifier()
       : super(
-          Platform.isAndroid
+          Platform.isAndroid || Platform.isLinux
               ? PermissionStatus.granted
               : PermissionStatus.restricted,
         ) {
@@ -29,9 +29,15 @@ class NotificationPermissionNotifier extends StateNotifier<PermissionStatus> {
   }
 
   Future<PermissionStatus> getNotificationPermission() async {
-    final status = await Permission.notification.status;
-    state = status;
-    return status;
+    if (Platform.isLinux) {
+      final status = PermissionStatus.granted;
+      state = status;
+      return status;
+    } else {
+      final status = await Permission.notification.status;
+      state = status;
+      return status;
+    }
   }
 
   /// Either the permission was granted already or else ask for the permission

@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:immich_mobile/entities/album.entity.dart';
 import 'package:immich_mobile/entities/android_device_asset.entity.dart';
+import 'package:immich_mobile/entities/linux_device_asset.entity.dart';
 import 'package:immich_mobile/entities/asset.entity.dart';
 import 'package:immich_mobile/entities/device_asset.entity.dart';
 import 'package:immich_mobile/entities/duplicated_asset.entity.dart';
@@ -170,16 +171,29 @@ class AssetRepository extends DatabaseRepository implements IAssetRepository {
   }
 
   @override
-  Future<List<DeviceAsset?>> getDeviceAssetsById(List<Object> ids) =>
-      Platform.isAndroid
-          ? db.androidDeviceAssets.getAll(ids.cast())
-          : db.iOSDeviceAssets.getAllById(ids.cast());
+  Future<List<DeviceAsset?>> getDeviceAssetsById(List<Object> ids) {
+    if (Platform.isAndroid) {
+      return db.androidDeviceAssets.getAll(ids.cast());
+    } else if (Platform.isIOS) {
+      return db.iOSDeviceAssets.getAllById(ids.cast());
+    } else if (Platform.isLinux) {
+      return db.linuxDeviceAssets.getAllById(ids.cast());
+    }
+    throw UnsupportedError("Unsuported platform");
+  }
 
   @override
   Future<void> upsertDeviceAssets(List<DeviceAsset> deviceAssets) => txn(
-        () => Platform.isAndroid
-            ? db.androidDeviceAssets.putAll(deviceAssets.cast())
-            : db.iOSDeviceAssets.putAll(deviceAssets.cast()),
+        () {
+          if (Platform.isAndroid) {
+            return db.androidDeviceAssets.putAll(deviceAssets.cast());
+          } else if (Platform.isIOS) {
+            return db.iOSDeviceAssets.putAll(deviceAssets.cast());
+          } else if (Platform.isLinux) {
+            return db.linuxDeviceAssets.putAll(deviceAssets.cast());
+          }
+          throw UnsupportedError("Unsuported platform");
+        }
       );
 
   @override
