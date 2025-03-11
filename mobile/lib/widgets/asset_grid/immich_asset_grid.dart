@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:immich_mobile/extensions/asyncvalue_extensions.dart';
@@ -13,6 +14,7 @@ import 'package:immich_mobile/providers/app_settings.provider.dart';
 import 'package:immich_mobile/services/app_settings.service.dart';
 import 'package:immich_mobile/entities/asset.entity.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
+
 
 class ImmichAssetGrid extends HookConsumerWidget {
   final int? assetsPerRow;
@@ -33,27 +35,30 @@ class ImmichAssetGrid extends HookConsumerWidget {
   final bool shrinkWrap;
   final bool showDragScroll;
   final bool showStack;
+  final Function? addZoomListener;
+  final int scalingFactor;
 
-  const ImmichAssetGrid({
-    super.key,
-    this.assets,
-    this.onRefresh,
-    this.renderList,
-    this.assetsPerRow,
-    this.showStorageIndicator,
-    this.listener,
-    this.margin = 2.0,
-    this.selectionActive = false,
-    this.preselectedAssets,
-    this.canDeselect = true,
-    this.dynamicLayout,
-    this.showMultiSelectIndicator = true,
-    this.visibleItemsListener,
-    this.topWidget,
-    this.shrinkWrap = false,
-    this.showDragScroll = true,
-    this.showStack = false,
-  });
+  const ImmichAssetGrid(
+      {super.key,
+      this.assets,
+      this.onRefresh,
+      this.renderList,
+      this.assetsPerRow,
+      this.showStorageIndicator,
+      this.listener,
+      this.margin = 2.0,
+      this.selectionActive = false,
+      this.preselectedAssets,
+      this.canDeselect = true,
+      this.dynamicLayout,
+      this.showMultiSelectIndicator = true,
+      this.visibleItemsListener,
+      this.topWidget,
+      this.shrinkWrap = false,
+      this.showDragScroll = true,
+      this.showStack = false,
+      this.scalingFactor = 1,
+      this.addZoomListener});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -75,6 +80,13 @@ class ImmichAssetGrid extends HookConsumerWidget {
         return tabIndex * range;
       }
       return range * 7;
+    }
+
+    if (addZoomListener != null) {
+      addZoomListener!((double scalingFactor) {
+        print('${scaleFactor.value}');
+        scaleFactor.value = scaleFactor.value * scalingFactor;
+      });
     }
 
     Widget buildAssetGridView(RenderList renderList) {
@@ -101,7 +113,7 @@ class ImmichAssetGrid extends HookConsumerWidget {
         },
         child: ImmichAssetGridView(
           onRefresh: onRefresh,
-          assetsPerRow: perRow.value,
+          assetsPerRow: scalingFactor,
           listener: listener,
           showStorageIndicator: showStorageIndicator ??
               settings.getSetting(AppSettingsEnum.storageIndicator),

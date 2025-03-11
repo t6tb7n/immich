@@ -65,9 +65,9 @@ export const upload = async (paths: string[], baseOptions: BaseOptions, options:
   }
 
   const { newFiles, duplicates } = await checkForDuplicates(scanFiles, options);
-  const newAssets = await uploadFiles(newFiles, options);
-  await updateAlbums([...newAssets, ...duplicates], options);
-  await deleteFiles(newFiles, options);
+  // const newAssets = await uploadFiles(newFiles, options);
+  // await updateAlbums([...newAssets, ...duplicates], options);
+  // await deleteFiles(newFiles, options);
 };
 
 const scan = async (pathsToCrawl: string[], options: UploadOptionsDto) => {
@@ -81,6 +81,8 @@ const scan = async (pathsToCrawl: string[], options: UploadOptionsDto) => {
     includeHidden: options.includeHidden,
     extensions: [...image, ...video],
   });
+
+  console.log(files.length);
 
   return files;
 };
@@ -125,26 +127,34 @@ export const checkForDuplicates = async (files: string[], { concurrency, skipHas
   const results: { id: string; checksum: string }[] = [];
   let checkBulkUploadRequests: AssetBulkUploadCheckItem[] = [];
 
+  let index = 0;
   const queue = new Queue<string, AssetBulkUploadCheckItem[]>(
     async (filepath: string): Promise<AssetBulkUploadCheckItem[]> => {
+      const tick = Date.now();
       const dto = { id: filepath, checksum: await sha1(filepath) };
+      console.log(index, Date.now() - tick, (await stat(filepath)).size / 1000, dto.id);
+      index++;
 
       results.push(dto);
       checkBulkUploadRequests.push(dto);
-      if (checkBulkUploadRequests.length === 5000) {
-        const batch = checkBulkUploadRequests;
-        checkBulkUploadRequests = [];
-        void checkBulkUploadQueue.push(batch);
-      }
+      // if (checkBulkUploadRequests.length === 5000) {
+      //   const batch = checkBulkUploadRequests;
+      //   checkBulkUploadRequests = [];
+      //   void checkBulkUploadQueue.push(batch);
+      // }
 
-      hashProgressBar.increment();
+      // hashProgressBar.increment();
       return results;
     },
     { concurrency, retry: 3 },
   );
 
   for (const item of files) {
-    void queue.push(item);
+    // void queue.push(item);
+    const tick = Date.now();
+    const dto = { id: item, checksum: await sha1(item) };
+    console.log(index, Date.now() - tick, (await stat(item)).size / 1000, dto.id);
+    index++;
   }
 
   await queue.drained();

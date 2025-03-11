@@ -113,7 +113,9 @@ Future<void> initApp() async {
 }
 
 Future<Isar> loadDb() async {
-  final dir = await getApplicationDocumentsDirectory();
+  // final dir = await getApplicationDocumentsDirectory();
+  
+  final dir = await getApplicationSupportDirectory();
   Isar db = await Isar.open(
     [
       StoreValueSchema,

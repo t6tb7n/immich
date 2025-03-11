@@ -4,6 +4,7 @@ import 'package:auto_route/auto_route.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
+import 'package:flutter/services.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:immich_mobile/extensions/build_context_extensions.dart';
 import 'package:immich_mobile/providers/album/album.provider.dart';
@@ -17,9 +18,31 @@ import 'package:immich_mobile/widgets/asset_grid/multiselect_grid.dart';
 import 'package:immich_mobile/widgets/common/immich_app_bar.dart';
 import 'package:immich_mobile/widgets/common/immich_loading_indicator.dart';
 
+class ZoomInIntent extends Intent {}
+
+class ZoomOutIntent extends Intent {}
+
+class ZoomInAction extends Action {
+  @override
+  Object? invoke(Intent intent) {
+    // TODO: implement invoke
+    throw UnimplementedError();
+  }
+}
+
+class ZoomOutAction extends Action {
+  @override
+  Object? invoke(Intent intent) {
+    // TODO: implement invoke
+    throw UnimplementedError();
+  }
+}
+
 @RoutePage()
 class PhotosPage extends HookConsumerWidget {
-  const PhotosPage({super.key});
+  final List<Function> zoomCallbacks = [];
+
+  PhotosPage({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -27,6 +50,7 @@ class PhotosPage extends HookConsumerWidget {
     final timelineUsers = ref.watch(timelineUsersIdsProvider);
     final tipOneOpacity = useState(0.0);
     final refreshCount = useState(0);
+    final scalingFactor = useState(10);
 
     useEffect(
       () {
@@ -112,35 +136,112 @@ class PhotosPage extends HookConsumerWidget {
       );
     }
 
-    return Stack(
-      children: [
-        MultiselectGrid(
-          topWidget: (currentUser != null && currentUser.memoryEnabled)
-              ? const MemoryLane()
-              : const SizedBox(),
-          renderListProvider: timelineUsers.length > 1
-              ? multiUserAssetsProvider(timelineUsers)
-              : assetsProvider(currentUser?.isarId),
-          buildLoadingIndicator: buildLoadingIndicator,
-          onRefresh: refreshAssets,
-          stackEnabled: true,
-          archiveEnabled: true,
-          editEnabled: true,
-        ),
-        AnimatedPositioned(
-          duration: const Duration(milliseconds: 300),
-          top: ref.watch(multiselectProvider)
-              ? -(kToolbarHeight + context.padding.top)
-              : 0,
-          left: 0,
-          right: 0,
-          child: Container(
-            height: kToolbarHeight + context.padding.top,
-            color: context.themeData.appBarTheme.backgroundColor,
-            child: ImmichAppBar(actions: [buildRefreshIndicator()]),
+    zoomIn() {
+      scalingFactor.value -= 1;
+    }
+
+    zoomOut() {
+      scalingFactor.value += 1;
+    }
+
+    buildZoomInIndicator() {
+      // final indicatorIcon = getBackupBadgeIcon();
+      // final badgeBackground = context.colorScheme.surfaceContainer;
+      const widgetSize = 30.0;
+      return InkWell(
+        onTap: () => zoomIn(),
+        borderRadius: BorderRadius.circular(12),
+        child: Badge(
+          backgroundColor: Colors.transparent,
+          alignment: Alignment.bottomRight,
+          offset: const Offset(-2, -12),
+          child: Icon(
+            Icons.zoom_in,
+            size: widgetSize,
+            color: context.primaryColor,
           ),
         ),
-      ],
-    );
+      );
+    }
+
+    buildZoomOutIndicator() {
+      // final indicatorIcon = getBackupBadgeIcon();
+      // final badgeBackground = context.colorScheme.surfaceContainer;
+      const widgetSize = 30.0;
+      return InkWell(
+        onTap: () => zoomOut(),
+        borderRadius: BorderRadius.circular(12),
+        child: Badge(
+          backgroundColor: Colors.transparent,
+          alignment: Alignment.bottomRight,
+          offset: const Offset(-2, -12),
+          child: Icon(
+            Icons.zoom_out,
+            size: widgetSize,
+            color: context.primaryColor,
+          ),
+        ),
+      );
+    }
+
+    return Shortcuts(
+        shortcuts: <ShortcutActivator, Intent>{
+          const SingleActivator(LogicalKeyboardKey.numpadAdd, control: true):
+              ZoomInIntent(),
+          const SingleActivator(LogicalKeyboardKey.numpadSubtract,
+              control: true): ZoomOutIntent(),
+        },
+        child: Actions(
+            actions: <Type, Action<Intent>>{
+              ZoomInIntent:
+                  CallbackAction<ZoomInIntent>(onInvoke: (ZoomInIntent intent) {
+                zoomIn();
+              }),
+              ZoomOutIntent: CallbackAction<ZoomOutIntent>(
+                  onInvoke: (ZoomOutIntent intent) {
+                zoomOut();
+              })
+            },
+            child: Focus(
+                autofocus: true,
+                child: Stack(
+                  children: [
+                    MultiselectGrid(
+                        topWidget:
+                            (currentUser != null && currentUser.memoryEnabled)
+                                ? const MemoryLane()
+                                : const SizedBox(),
+                        renderListProvider: timelineUsers.length > 1
+                            ? multiUserAssetsProvider(timelineUsers)
+                            : assetsProvider(currentUser?.isarId),
+                        buildLoadingIndicator: buildLoadingIndicator,
+                        onRefresh: refreshAssets,
+                        stackEnabled: true,
+                        archiveEnabled: true,
+                        editEnabled: true,
+                        scalingFactor: scalingFactor.value,
+                        addZoomListener: (Function cb) {
+                          zoomCallbacks.clear();
+                          zoomCallbacks.add(cb);
+                        }),
+                    AnimatedPositioned(
+                      duration: const Duration(milliseconds: 300),
+                      top: ref.watch(multiselectProvider)
+                          ? -(kToolbarHeight + context.padding.top)
+                          : 0,
+                      left: 0,
+                      right: 0,
+                      child: Container(
+                        height: kToolbarHeight + context.padding.top,
+                        color: context.themeData.appBarTheme.backgroundColor,
+                        child: ImmichAppBar(actions: [
+                          buildRefreshIndicator(),
+                          buildZoomInIndicator(),
+                          buildZoomOutIndicator()
+                        ]),
+                      ),
+                    ),
+                  ],
+                ))));
   }
 }

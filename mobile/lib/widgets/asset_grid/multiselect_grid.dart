@@ -28,22 +28,23 @@ import 'package:immich_mobile/utils/immich_loading_overlay.dart';
 import 'package:immich_mobile/utils/selection_handlers.dart';
 
 class MultiselectGrid extends HookConsumerWidget {
-  const MultiselectGrid({
-    super.key,
-    required this.renderListProvider,
-    this.onRefresh,
-    this.buildLoadingIndicator,
-    this.onRemoveFromAlbum,
-    this.topWidget,
-    this.stackEnabled = false,
-    this.archiveEnabled = false,
-    this.deleteEnabled = true,
-    this.favoriteEnabled = true,
-    this.editEnabled = false,
-    this.unarchive = false,
-    this.unfavorite = false,
-    this.emptyIndicator,
-  });
+  const MultiselectGrid(
+      {super.key,
+      required this.renderListProvider,
+      this.onRefresh,
+      this.buildLoadingIndicator,
+      this.onRemoveFromAlbum,
+      this.topWidget,
+      this.stackEnabled = false,
+      this.archiveEnabled = false,
+      this.deleteEnabled = true,
+      this.favoriteEnabled = true,
+      this.editEnabled = false,
+      this.unarchive = false,
+      this.unfavorite = false,
+      this.emptyIndicator,
+      this.scalingFactor = 1,
+      this.addZoomListener});
 
   final ProviderListenable<AsyncValue<RenderList>> renderListProvider;
   final Future<void> Function()? onRefresh;
@@ -60,6 +61,8 @@ class MultiselectGrid extends HookConsumerWidget {
   final Widget? emptyIndicator;
   Widget buildDefaultLoadingIndicator() =>
       const Center(child: ImmichLoadingIndicator());
+  final Function? addZoomListener;
+  final int scalingFactor;
 
   Widget buildEmptyIndicator() =>
       emptyIndicator ?? Center(child: const Text("no_assets_to_show").tr());
@@ -427,7 +430,8 @@ class MultiselectGrid extends HookConsumerWidget {
                               ),
                         topWidget: topWidget,
                         showStack: stackEnabled,
-                      ),
+                        scalingFactor: scalingFactor,
+                        addZoomListener: addZoomListener),
                 error: (error, _) => Center(child: Text(error.toString())),
                 loading: buildLoadingIndicator ?? buildDefaultLoadingIndicator,
               ),

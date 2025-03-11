@@ -1248,7 +1248,7 @@ class PhotosRoute extends PageRouteInfo<void> {
   static PageInfo page = PageInfo(
     name,
     builder: (data) {
-      return const PhotosPage();
+      return PhotosPage();
     },
   );
 }
