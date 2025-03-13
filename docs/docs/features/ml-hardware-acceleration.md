@@ -1,4 +1,4 @@
-# Hardware-Accelerated Machine Learning [Experimental]
+# Hardware-Accelerated Machine Learning
 
 This feature allows you to use a GPU to accelerate machine learning tasks, such as Smart Search and Facial Recognition, while reducing CPU load.
 As this is a new feature, it is still experimental and may not work on all systems.
@@ -11,7 +11,7 @@ You do not need to redo any machine learning jobs after enabling hardware accele
 
 - ARM NN (Mali)
 - CUDA (NVIDIA GPUs with [compute capability](https://developer.nvidia.com/cuda-gpus) 5.2 or higher)
-- OpenVINO (Intel discrete GPUs such as Iris Xe and Arc)
+- OpenVINO (Intel GPUs such as Iris Xe and Arc)
 
 ## Limitations
 
@@ -43,8 +43,9 @@ You do not need to redo any machine learning jobs after enabling hardware accele
 
 #### OpenVINO
 
-- The server must have a discrete GPU, i.e. Iris Xe or Arc. Expect issues when attempting to use integrated graphics.
+- Integrated GPUs are more likely to experience issues than discrete GPUs, especially for older processors or servers with low RAM.
 - Ensure the server's kernel version is new enough to use the device for hardware accceleration.
+- Expect higher RAM usage when using OpenVINO compared to CPU processing.
 
 ## Setup
 

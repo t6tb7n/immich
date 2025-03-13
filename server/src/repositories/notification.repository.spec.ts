@@ -1,19 +1,12 @@
-import { ILoggerRepository } from 'src/interfaces/logger.interface';
-import { EmailRenderRequest, EmailTemplate } from 'src/interfaces/notification.interface';
-import { NotificationRepository } from 'src/repositories/notification.repository';
-import { Mocked } from 'vitest';
+import { LoggingRepository } from 'src/repositories/logging.repository';
+import { EmailRenderRequest, EmailTemplate, NotificationRepository } from 'src/repositories/notification.repository';
+import { automock } from 'test/utils';
 
 describe(NotificationRepository.name, () => {
   let sut: NotificationRepository;
-  let loggerMock: Mocked<ILoggerRepository>;
 
   beforeEach(() => {
-    loggerMock = {
-      setContext: vitest.fn(),
-      debug: vitest.fn(),
-    } as unknown as Mocked<ILoggerRepository>;
-
-    sut = new NotificationRepository(loggerMock);
+    sut = new NotificationRepository(automock(LoggingRepository, { args: [, { getEnv: () => ({}) }], strict: false }));
   });
 
   describe('renderEmail', () => {
@@ -21,6 +14,7 @@ describe(NotificationRepository.name, () => {
       const request: EmailRenderRequest = {
         template: EmailTemplate.TEST_EMAIL,
         data: { displayName: 'Alen Turing', baseUrl: 'http://localhost' },
+        customTemplate: '',
       };
 
       const result = await sut.renderEmail(request);
@@ -33,6 +27,7 @@ describe(NotificationRepository.name, () => {
       const request: EmailRenderRequest = {
         template: EmailTemplate.WELCOME,
         data: { displayName: 'Alen Turing', username: 'turing', baseUrl: 'http://localhost' },
+        customTemplate: '',
       };
 
       const result = await sut.renderEmail(request);
@@ -51,6 +46,7 @@ describe(NotificationRepository.name, () => {
           recipientName: 'Jane',
           baseUrl: 'http://localhost',
         },
+        customTemplate: '',
       };
 
       const result = await sut.renderEmail(request);
@@ -63,6 +59,7 @@ describe(NotificationRepository.name, () => {
       const request: EmailRenderRequest = {
         template: EmailTemplate.ALBUM_UPDATE,
         data: { albumName: 'Holiday', albumId: '123', recipientName: 'Jane', baseUrl: 'http://localhost' },
+        customTemplate: '',
       };
 
       const result = await sut.renderEmail(request);

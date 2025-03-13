@@ -1,6 +1,6 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
-  import type { OnAction } from '$lib/components/asset-viewer/actions/action';
+  import type { OnAction, PreAction } from '$lib/components/asset-viewer/actions/action';
   import AddToAlbumAction from '$lib/components/asset-viewer/actions/add-to-album-action.svelte';
   import ArchiveAction from '$lib/components/asset-viewer/actions/archive-action.svelte';
   import CloseAction from '$lib/components/asset-viewer/actions/close-action.svelte';
@@ -9,6 +9,7 @@
   import FavoriteAction from '$lib/components/asset-viewer/actions/favorite-action.svelte';
   import RestoreAction from '$lib/components/asset-viewer/actions/restore-action.svelte';
   import SetAlbumCoverAction from '$lib/components/asset-viewer/actions/set-album-cover-action.svelte';
+  import SetFeaturedPhotoAction from '$lib/components/asset-viewer/actions/set-person-featured-action.svelte';
   import SetProfilePictureAction from '$lib/components/asset-viewer/actions/set-profile-picture-action.svelte';
   import ShareAction from '$lib/components/asset-viewer/actions/share-action.svelte';
   import ShowDetailAction from '$lib/components/asset-viewer/actions/show-detail-action.svelte';
@@ -27,6 +28,7 @@
     AssetTypeEnum,
     type AlbumResponseDto,
     type AssetResponseDto,
+    type PersonResponseDto,
     type StackResponseDto,
   } from '@immich/sdk';
   import {
@@ -50,11 +52,13 @@
   interface Props {
     asset: AssetResponseDto;
     album?: AlbumResponseDto | null;
+    person?: PersonResponseDto | null;
     stack?: StackResponseDto | null;
     showDetailButton: boolean;
     showSlideshow?: boolean;
     onZoomImage: () => void;
     onCopyImage?: () => Promise<void>;
+    preAction: PreAction;
     onAction: OnAction;
     onRunJob: (name: AssetJobName) => void;
     onPlaySlideshow: () => void;
@@ -67,11 +71,13 @@
   let {
     asset,
     album = null,
+    person = null,
     stack = null,
     showDetailButton,
     showSlideshow = false,
     onZoomImage,
     onCopyImage,
+    preAction,
     onAction,
     onRunJob,
     onPlaySlideshow,
@@ -100,10 +106,7 @@
   <div class="text-white">
     <CloseAction {onClose} />
   </div>
-  <div
-    class="flex w-[calc(100%-3rem)] justify-end gap-2 overflow-hidden text-white"
-    data-testid="asset-viewer-navbar-actions"
-  >
+  <div class="flex gap-2 overflow-x-auto text-white" data-testid="asset-viewer-navbar-actions">
     {#if !asset.isTrashed && $user}
       <ShareAction {asset} />
     {/if}
@@ -148,7 +151,7 @@
     {/if} -->
 
     {#if isOwner}
-      <DeleteAction {asset} {onAction} />
+      <DeleteAction {asset} {onAction} {preAction} />
 
       <ButtonContextMenu direction="left" align="top-right" color="opaque" title={$t('more')} icon={mdiDotsVertical}>
         {#if showSlideshow}
@@ -171,6 +174,9 @@
           {/if}
           {#if album}
             <SetAlbumCoverAction {asset} {album} />
+          {/if}
+          {#if person}
+            <SetFeaturedPhotoAction {asset} {person} />
           {/if}
           {#if asset.type === AssetTypeEnum.Image}
             <SetProfilePictureAction {asset} />

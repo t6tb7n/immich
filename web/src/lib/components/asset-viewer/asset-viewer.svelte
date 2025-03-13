@@ -1,6 +1,6 @@
 <script lang="ts">
   import { focusTrap } from '$lib/actions/focus-trap';
-  import type { Action, OnAction } from '$lib/components/asset-viewer/actions/action';
+  import type { Action, OnAction, PreAction } from '$lib/components/asset-viewer/actions/action';
   import MotionPhotoAction from '$lib/components/asset-viewer/actions/motion-photo-action.svelte';
   import NextAssetAction from '$lib/components/asset-viewer/actions/next-asset-action.svelte';
   import PreviousAssetAction from '$lib/components/asset-viewer/actions/previous-asset-action.svelte';
@@ -8,7 +8,6 @@
   import { updateNumberOfComments } from '$lib/stores/activity.store';
   import { closeEditorCofirm } from '$lib/stores/asset-editor.store';
   import { assetViewingStore } from '$lib/stores/asset-viewing.store';
-  import type { AssetStore } from '$lib/stores/assets.store';
   import { isShowDetail } from '$lib/stores/preferences.store';
   import { SlideshowNavigation, SlideshowState, slideshowStore } from '$lib/stores/slideshow.store';
   import { user } from '$lib/stores/user.store';
@@ -30,6 +29,7 @@
     type ActivityResponseDto,
     type AlbumResponseDto,
     type AssetResponseDto,
+    type PersonResponseDto,
     type StackResponseDto,
   } from '@immich/sdk';
   import { onDestroy, onMount, untrack } from 'svelte';
@@ -43,40 +43,46 @@
   import DetailPanel from './detail-panel.svelte';
   import CropArea from './editor/crop-tool/crop-area.svelte';
   import EditorPanel from './editor/editor-panel.svelte';
+  import ImagePanoramaViewer from './image-panorama-viewer.svelte';
   import PhotoViewer from './photo-viewer.svelte';
   import SlideshowBar from './slideshow-bar.svelte';
   import VideoViewer from './video-wrapper-viewer.svelte';
-  import ImagePanoramaViewer from './image-panorama-viewer.svelte';
+
+  type HasAsset = boolean;
 
   interface Props {
-    assetStore?: AssetStore | null;
     asset: AssetResponseDto;
     preloadAssets?: AssetResponseDto[];
     showNavigation?: boolean;
     withStacked?: boolean;
     isShared?: boolean;
     album?: AlbumResponseDto | null;
+    person?: PersonResponseDto | null;
+    preAction?: PreAction | undefined;
     onAction?: OnAction | undefined;
     reactions?: ActivityResponseDto[];
     onClose: (dto: { asset: AssetResponseDto }) => void;
-    onNext: () => void;
-    onPrevious: () => void;
+    onNext: () => Promise<HasAsset>;
+    onPrevious: () => Promise<HasAsset>;
+    onRandom: () => Promise<AssetResponseDto | null>;
     copyImage?: () => Promise<void>;
   }
 
   let {
-    assetStore = null,
     asset = $bindable(),
     preloadAssets = $bindable([]),
     showNavigation = true,
     withStacked = false,
     isShared = false,
     album = null,
+    person = null,
+    preAction = undefined,
     onAction = undefined,
     reactions = $bindable([]),
     onClose,
     onNext,
     onPrevious,
+    onRandom,
     copyImage = $bindable(),
   }: Props = $props();
 
@@ -186,7 +192,7 @@
     }
   };
 
-  const onAssetUpdate = (assetUpdate: AssetResponseDto) => {
+  const onAssetUpdate = ({ asset: assetUpdate }: { event: 'upload' | 'update'; asset: AssetResponseDto }) => {
     if (assetUpdate.id === asset.id) {
       asset = assetUpdate;
     }
@@ -194,8 +200,8 @@
 
   onMount(async () => {
     unsubscribes.push(
-      websocketEvents.on('on_upload_success', onAssetUpdate),
-      websocketEvents.on('on_asset_update', onAssetUpdate),
+      websocketEvents.on('on_upload_success', (asset) => onAssetUpdate({ event: 'upload', asset })),
+      websocketEvents.on('on_asset_update', (asset) => onAssetUpdate({ event: 'update', asset })),
     );
 
     slideshowStateUnsubscribe = slideshowState.subscribe((value) => {
@@ -268,22 +274,6 @@
     });
   };
 
-  const navigateAssetRandom = async () => {
-    if (!assetStore) {
-      return;
-    }
-
-    const asset = await assetStore.getRandomAsset();
-    if (!asset) {
-      return;
-    }
-
-    slideshowHistory.queue(asset);
-
-    setAsset(asset);
-    $restartSlideshowProgress = true;
-  };
-
   const navigateAsset = async (order?: 'previous' | 'next', e?: Event) => {
     if (!order) {
       if ($slideshowState === SlideshowState.PlaySlideshow) {
@@ -293,23 +283,30 @@
       }
     }
 
+    e?.stopPropagation();
+
+    let hasNext = false;
+
     if ($slideshowState === SlideshowState.PlaySlideshow && $slideshowNavigation === SlideshowNavigation.Shuffle) {
-      return (order === 'previous' ? slideshowHistory.previous() : slideshowHistory.next()) || navigateAssetRandom();
+      hasNext = order === 'previous' ? slideshowHistory.previous() : slideshowHistory.next();
+      if (!hasNext) {
+        const asset = await onRandom();
+        if (asset) {
+          slideshowHistory.queue(asset);
+          hasNext = true;
+        }
+      }
+    } else {
+      hasNext = order === 'previous' ? await onPrevious() : await onNext();
     }
 
-    if ($slideshowState === SlideshowState.PlaySlideshow && assetStore) {
-      const hasNext =
-        order === 'previous' ? await assetStore.getPreviousAsset(asset) : await assetStore.getNextAsset(asset);
+    if ($slideshowState === SlideshowState.PlaySlideshow) {
       if (hasNext) {
         $restartSlideshowProgress = true;
       } else {
         await handleStopSlideshow();
       }
     }
-
-    e?.stopPropagation();
-    // eslint-disable-next-line @typescript-eslint/no-unused-expressions
-    order === 'previous' ? onPrevious() : onNext();
   };
 
   // const showEditorHandler = () => {
@@ -371,7 +368,9 @@
   const handleStackedAssetMouseEvent = (isMouseOver: boolean, asset: AssetResponseDto) => {
     previewStackedAsset = isMouseOver ? asset : undefined;
   };
-
+  const handlePreAction = (action: Action) => {
+    preAction?.(action);
+  };
   const handleAction = async (action: Action) => {
     switch (action.type) {
       case AssetAction.ADD_TO_ALBUM: {
@@ -382,6 +381,7 @@
       case AssetAction.KEEP_THIS_DELETE_OTHERS:
       case AssetAction.UNSTACK: {
         closeViewer();
+        break;
       }
     }
 
@@ -429,11 +429,13 @@
       <AssetViewerNavBar
         {asset}
         {album}
+        {person}
         {stack}
         showDetailButton={enableDetailPanel}
-        showSlideshow={!!assetStore}
+        showSlideshow={true}
         onZoomImage={zoomToggle}
         onCopyImage={copyImage}
+        preAction={handlePreAction}
         onAction={handleAction}
         onRunJob={handleRunJob}
         onPlaySlideshow={() => ($slideshowState = SlideshowState.PlaySlideshow)}
@@ -487,7 +489,7 @@
         {:else}
           <VideoViewer
             assetId={previewStackedAsset.id}
-            checksum={previewStackedAsset.checksum}
+            cacheKey={previewStackedAsset.thumbhash}
             projectionType={previewStackedAsset.exifInfo?.projectionType}
             loopVideo={true}
             onPreviousAsset={() => navigateAsset('previous')}
@@ -504,7 +506,7 @@
           {#if shouldPlayMotionPhoto && asset.livePhotoVideoId}
             <VideoViewer
               assetId={asset.livePhotoVideoId}
-              checksum={asset.checksum}
+              cacheKey={asset.thumbhash}
               projectionType={asset.exifInfo?.projectionType}
               loopVideo={$slideshowState !== SlideshowState.PlaySlideshow}
               onPreviousAsset={() => navigateAsset('previous')}
@@ -533,7 +535,7 @@
         {:else}
           <VideoViewer
             assetId={asset.id}
-            checksum={asset.checksum}
+            cacheKey={asset.thumbhash}
             projectionType={asset.exifInfo?.projectionType}
             loopVideo={$slideshowState !== SlideshowState.PlaySlideshow}
             onPreviousAsset={() => navigateAsset('previous')}

@@ -1,10 +1,5 @@
-<script lang="ts" module>
-  import type { FormatXMLElementFn, PrimitiveType } from 'intl-messageformat';
-  export type InterpolationValues = Record<string, PrimitiveType | FormatXMLElementFn<unknown>>;
-</script>
-
 <script lang="ts">
-  import { IntlMessageFormat } from 'intl-messageformat';
+  import { IntlMessageFormat, type FormatXMLElementFn } from 'intl-messageformat';
   import {
     TYPE,
     type MessageFormatElement,
@@ -12,6 +7,7 @@
     type SelectElement,
   } from '@formatjs/icu-messageformat-parser';
   import { locale as i18nLocale, json, type Translations } from 'svelte-i18n';
+  import type { InterpolationValues } from '$lib/components/i18n/format-message';
 
   type MessagePart = {
     message: string;
@@ -133,6 +129,7 @@ Used for every occurrence of an HTML tag in a message
 Result: Visit <a href="">docs</a> <strong>now</strong>
 ```
 -->
+<!-- eslint-disable-next-line svelte/require-each-key -->
 {#each parts as { tag, message }}
   {#if tag}
     {#if children}{@render children({ tag, message })}{:else}{message}{/if}

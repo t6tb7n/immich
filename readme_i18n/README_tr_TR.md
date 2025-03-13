@@ -28,6 +28,7 @@
   <a href="README_de_DE.md">Deutsch</a>
   <a href="README_nl_NL.md">Nederlands</a>
   <a href="README_zh_CN.md">中文</a>
+  <a href="README_uk_UA.md">Українська</a>
   <a href="README_ru_RU.md">Русский</a>
   <a href="README_pt_BR.md">Português Brasileiro</a>
   <a href="README_sv_SE.md">Svenska</a>
@@ -59,7 +60,7 @@ Kurulum dahil olmak üzere resmi belgeleri https://immich.app/ adresinde bulabil
 
 Web demo adresi: https://demo.immich.app
 
-Mobil uygulama için `Server Endpoint URL` olarak `https://demo.immich.app/api` adresini kullanabilirsiniz.
+Mobil uygulama için `Server Endpoint URL` olarak `https://demo.immich.app` adresini kullanabilirsiniz.
 
 ```bash title="Demo Bilgileri"
 Giriş bilgileri:

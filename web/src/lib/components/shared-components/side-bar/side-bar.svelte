@@ -21,12 +21,16 @@
     mdiToolboxOutline,
     mdiFolderOutline,
     mdiTagMultipleOutline,
+    mdiLink,
   } from '@mdi/js';
   import SideBarSection from './side-bar-section.svelte';
   import SideBarLink from './side-bar-link.svelte';
   import { t } from 'svelte-i18n';
   import BottomInfo from '$lib/components/shared-components/side-bar/bottom-info.svelte';
   import { preferences } from '$lib/stores/user.store';
+  import { recentAlbumsDropdown } from '$lib/stores/preferences.store';
+  import RecentAlbums from '$lib/components/shared-components/side-bar/recent-albums.svelte';
+  import { fly } from 'svelte/transition';
 
   let isArchiveSelected: boolean = $state(false);
   let isFavoritesSelected: boolean = $state(false);
@@ -69,6 +73,10 @@
       />
     {/if}
 
+    {#if $preferences.sharedLinks.enabled && $preferences.sharedLinks.sidebarWeb}
+      <SideBarLink title={$t('shared_links')} routeId="/(user)/shared-links" icon={mdiLink} />
+    {/if}
+
     <SideBarLink
       title={$t('sharing')}
       routeId="/(user)/sharing"
@@ -88,7 +96,19 @@
       bind:isSelected={isFavoritesSelected}
     ></SideBarLink>
 
-    <SideBarLink title={$t('albums')} routeId="/(user)/albums" icon={mdiImageAlbum} flippedLogo></SideBarLink>
+    <SideBarLink
+      title={$t('albums')}
+      routeId="/(user)/albums"
+      icon={mdiImageAlbum}
+      flippedLogo
+      bind:dropdownOpen={$recentAlbumsDropdown}
+    >
+      {#snippet dropDownContent()}
+        <span in:fly={{ y: -20 }} class="hidden md:block">
+          <RecentAlbums />
+        </span>
+      {/snippet}
+    </SideBarLink>
 
     {#if $preferences.tags.enabled && $preferences.tags.sidebarWeb}
       <SideBarLink title={$t('tags')} routeId="/(user)/tags" icon={mdiTagMultipleOutline} flippedLogo />

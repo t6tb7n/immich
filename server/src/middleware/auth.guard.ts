@@ -1,7 +1,6 @@
 import {
   CanActivate,
   ExecutionContext,
-  Inject,
   Injectable,
   SetMetadata,
   applyDecorators,
@@ -12,7 +11,7 @@ import { ApiBearerAuth, ApiCookieAuth, ApiOkResponse, ApiQuery, ApiSecurity } fr
 import { Request } from 'express';
 import { AuthDto } from 'src/dtos/auth.dto';
 import { ImmichQuery, MetadataKey, Permission } from 'src/enum';
-import { ILoggerRepository } from 'src/interfaces/logger.interface';
+import { LoggingRepository } from 'src/repositories/logging.repository';
 import { AuthService, LoginDetails } from 'src/services/auth.service';
 import { UAParser } from 'ua-parser-js';
 
@@ -49,7 +48,7 @@ export const GetLoginDetails = createParamDecorator((data, context: ExecutionCon
   const userAgent = UAParser(request.headers['user-agent']);
 
   return {
-    clientIp: request.ip,
+    clientIp: request.ip ?? '',
     isSecure: request.secure,
     deviceType: userAgent.browser.name || userAgent.device.type || (request.headers.devicemodel as string) || '',
     deviceOS: userAgent.os.name || (request.headers.devicetype as string) || '',
@@ -67,7 +66,7 @@ export interface AuthenticatedRequest extends Request {
 @Injectable()
 export class AuthGuard implements CanActivate {
   constructor(
-    @Inject(ILoggerRepository) private logger: ILoggerRepository,
+    private logger: LoggingRepository,
     private reflector: Reflector,
     private authService: AuthService,
   ) {

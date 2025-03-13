@@ -11,10 +11,11 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:immich_mobile/entities/asset.entity.dart';
 import 'package:immich_mobile/extensions/asyncvalue_extensions.dart';
 import 'package:immich_mobile/extensions/build_context_extensions.dart';
-import 'package:immich_mobile/extensions/latlngbounds_extension.dart';
 import 'package:immich_mobile/extensions/maplibrecontroller_extensions.dart';
 import 'package:immich_mobile/models/map/map_event.model.dart';
 import 'package:immich_mobile/models/map/map_marker.model.dart';
+import 'package:immich_mobile/providers/asset_viewer/current_asset.provider.dart';
+import 'package:immich_mobile/providers/asset_viewer/show_controls.provider.dart';
 import 'package:immich_mobile/providers/db.provider.dart';
 import 'package:immich_mobile/providers/map/map_marker.provider.dart';
 import 'package:immich_mobile/providers/map/map_state.provider.dart';
@@ -37,7 +38,7 @@ class MapPage extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final mapController = useRef<MaplibreMapController?>(null);
+    final mapController = useRef<MapLibreMapController?>(null);
     final markers = useRef<List<MapMarker>>([]);
     final markersInBounds = useRef<List<MapMarker>>([]);
     final bottomSheetStreamController = useStreamController<MapEvent>();
@@ -99,8 +100,11 @@ class MapPage extends HookConsumerWidget {
 
     useEffect(
       () {
+        final currentAssetLink =
+            ref.read(currentAssetProvider.notifier).ref.keepAlive();
+
         loadMarkers();
-        return null;
+        return currentAssetLink.close;
       },
       [],
     );
@@ -157,7 +161,7 @@ class MapPage extends HookConsumerWidget {
       }
     }
 
-    void onMapCreated(MaplibreMapController controller) async {
+    void onMapCreated(MapLibreMapController controller) async {
       mapController.value = controller;
       controller.addListener(() {
         if (controller.isCameraMoving && selectedMarker.value != null) {
@@ -186,6 +190,10 @@ class MapPage extends HookConsumerWidget {
         GroupAssetsBy.none,
       );
 
+      ref.read(currentAssetProvider.notifier).set(asset);
+      if (asset.isVideo) {
+        ref.read(showControlsProvider.notifier).show = false;
+      }
       context.pushRoute(
         GalleryViewerRoute(
           initialIndex: 0,
@@ -255,7 +263,7 @@ class MapPage extends HookConsumerWidget {
       selectedAssets.value = selected ? selection : {};
     }
 
-    return MapThemeOveride(
+    return MapThemeOverride(
       mapBuilder: (style) => context.isMobile
           // Single-column
           ? Scaffold(
@@ -380,7 +388,7 @@ class _MapWithMarker extends StatelessWidget {
         child: Stack(
           children: [
             style.widgetWhen(
-              onData: (style) => MaplibreMap(
+              onData: (style) => MapLibreMap(
                 initialCameraPosition:
                     const CameraPosition(target: LatLng(0, 0)),
                 styleString: style,
@@ -394,7 +402,7 @@ class _MapWithMarker extends StatelessWidget {
                 tiltGesturesEnabled: false,
                 dragEnabled: false,
                 myLocationEnabled: false,
-                attributionButtonPosition: AttributionButtonPosition.TopRight,
+                attributionButtonPosition: AttributionButtonPosition.topRight,
                 rotateGesturesEnabled: false,
               ),
             ),

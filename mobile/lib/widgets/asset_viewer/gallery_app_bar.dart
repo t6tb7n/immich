@@ -4,6 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:immich_mobile/providers/album/current_album.provider.dart';
+import 'package:immich_mobile/providers/asset_viewer/current_asset.provider.dart';
+import 'package:immich_mobile/providers/asset_viewer/scroll_to_date_notifier.provider.dart';
+import 'package:immich_mobile/providers/tab.provider.dart';
 import 'package:immich_mobile/widgets/album/add_to_album_bottom_sheet.dart';
 import 'package:immich_mobile/providers/asset_viewer/download.provider.dart';
 import 'package:immich_mobile/providers/asset_viewer/show_controls.provider.dart';
@@ -19,23 +22,19 @@ import 'package:immich_mobile/providers/user.provider.dart';
 import 'package:immich_mobile/widgets/common/immich_toast.dart';
 
 class GalleryAppBar extends ConsumerWidget {
-  final Asset asset;
   final void Function() showInfo;
-  final void Function() onToggleMotionVideo;
-  final bool isPlayingVideo;
 
-  const GalleryAppBar({
-    super.key,
-    required this.asset,
-    required this.showInfo,
-    required this.onToggleMotionVideo,
-    required this.isPlayingVideo,
-  });
+  const GalleryAppBar({super.key, required this.showInfo});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final asset = ref.watch(currentAssetProvider);
+    if (asset == null) {
+      return const SizedBox();
+    }
     final album = ref.watch(currentAlbumProvider);
     final isOwner = asset.ownerId == ref.watch(currentUserProvider)?.isarId;
+    final showControls = ref.watch(showControlsProvider);
 
     final isPartner = ref
         .watch(partnerSharedWithProvider)
@@ -52,7 +51,8 @@ class GalleryAppBar extends ConsumerWidget {
     }
 
     handleRestore(Asset asset) async {
-      final result = await ref.read(trashProvider.notifier).restoreAsset(asset);
+      final result =
+          await ref.read(trashProvider.notifier).restoreAssets([asset]);
 
       if (result && context.mounted) {
         ImmichToast.show(
@@ -97,24 +97,33 @@ class GalleryAppBar extends ConsumerWidget {
       ref.read(downloadStateProvider.notifier).downloadAsset(asset, context);
     }
 
+    handleLocateAsset() async {
+      // Go back to the gallery
+      await context.maybePop();
+      await context
+          .navigateTo(const TabControllerRoute(children: [PhotosRoute()]));
+      ref.read(tabProvider.notifier).update((state) => state = TabEnum.home);
+      // Scroll to the asset's date
+      scrollToDateNotifierProvider.scrollToDate(asset.fileCreatedAt);
+    }
+
     return IgnorePointer(
-      ignoring: !ref.watch(showControlsProvider),
+      ignoring: !showControls,
       child: AnimatedOpacity(
         duration: const Duration(milliseconds: 100),
-        opacity: ref.watch(showControlsProvider) ? 1.0 : 0.0,
+        opacity: showControls ? 1.0 : 0.0,
         child: Container(
-          color: Colors.black.withOpacity(0.4),
+          color: Colors.black.withValues(alpha: 0.4),
           child: TopControlAppBar(
             isOwner: isOwner,
             isPartner: isPartner,
-            isPlayingMotionVideo: isPlayingVideo,
             asset: asset,
             onMoreInfoPressed: showInfo,
+            onLocatePressed: handleLocateAsset,
             onFavorite: toggleFavorite,
             onRestorePressed: () => handleRestore(asset),
             onUploadPressed: asset.isLocal ? () => handleUpload(asset) : null,
             onDownloadPressed: asset.isLocal ? null : handleDownloadAsset,
-            onToggleMotionVideo: onToggleMotionVideo,
             onAddToAlbumPressed: () => addToAlbum(asset),
             onActivitiesPressed: handleActivities,
           ),

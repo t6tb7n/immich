@@ -1,6 +1,6 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
-  import { page } from '$app/stores';
+  import { page } from '$app/state';
   import Icon from '$lib/components/elements/icon.svelte';
   import { ActionQueryParameterValue, AppRoute, QueryParameter } from '$lib/constants';
   import { handleError } from '$lib/utils/handle-error';
@@ -34,15 +34,17 @@
   let hasSelection = $derived(selectedPeople.length > 0);
   let peopleToNotShow = $derived([...selectedPeople, person]);
 
-  onMount(async () => {
-    const data = await getAllPeople({ withHidden: false });
+  const handleSearch = async (sortFaces: boolean = false) => {
+    const data = await getAllPeople({ withHidden: false, closestPersonId: sortFaces ? person.id : undefined });
     people = data.people;
-  });
+  };
+
+  onMount(handleSearch);
 
   const handleSwapPeople = async () => {
     [person, selectedPeople[0]] = [selectedPeople[0], person];
-    $page.url.searchParams.set(QueryParameter.ACTION, ActionQueryParameterValue.MERGE);
-    await goto(`${AppRoute.PEOPLE}/${person.id}?${$page.url.searchParams.toString()}`);
+    page.url.searchParams.set(QueryParameter.ACTION, ActionQueryParameterValue.MERGE);
+    await goto(`${AppRoute.PEOPLE}/${person.id}?${page.url.searchParams.toString()}`);
   };
 
   const onSelect = async (selected: PersonResponseDto) => {
@@ -109,14 +111,14 @@
       <div></div>
     {/snippet}
     {#snippet trailing()}
-      <Button size={'sm'} disabled={!hasSelection} onclick={handleMerge}>
+      <Button size="sm" disabled={!hasSelection} onclick={handleMerge}>
         <Icon path={mdiMerge} size={18} />
         <span class="ml-2">{$t('merge')}</span></Button
       >
     {/snippet}
   </ControlAppBar>
   <section class="bg-immich-bg px-[70px] pt-[100px] dark:bg-immich-dark-bg">
-    <section id="merge-face-selector relative">
+    <section id="merge-face-selector">
       <div class="mb-10 h-[200px] place-content-center place-items-center">
         <p class="mb-4 text-center uppercase dark:text-white">{$t('choose_matching_people_to_merge')}</p>
 
@@ -149,8 +151,7 @@
           <FaceThumbnail {person} border circle selectable={false} thumbnailSize={180} />
         </div>
       </div>
-
-      <PeopleList {people} {peopleToNotShow} {screenHeight} {onSelect} />
+      <PeopleList {people} {peopleToNotShow} {screenHeight} {onSelect} {handleSearch} />
     </section>
   </section>
 </section>

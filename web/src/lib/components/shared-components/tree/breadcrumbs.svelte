@@ -45,16 +45,19 @@
           onclick={() => {}}
         />
       </li>
-      {#each pathSegments as segment, index}
+      {#each pathSegments as segment, index (segment)}
         {@const isLastSegment = index === pathSegments.length - 1}
         <li
           class="flex gap-2 items-center font-mono text-sm text-nowrap text-immich-primary dark:text-immich-dark-primary"
         >
           <Icon path={mdiChevronRight} class="text-gray-500 dark:text-gray-300" size={16} ariaHidden />
           {#if isLastSegment}
-            <p class="cursor-default">{segment}</p>
+            <p class="cursor-default whitespace-pre-wrap">{segment}</p>
           {:else}
-            <a class="underline hover:font-semibold" href={getLink(pathSegments.slice(0, index + 1).join('/'))}>
+            <a
+              class="underline hover:font-semibold whitespace-pre-wrap"
+              href={getLink(pathSegments.slice(0, index + 1).join('/'))}
+            >
               {segment}
             </a>
           {/if}

@@ -1,6 +1,8 @@
 <script lang="ts">
-  import { afterNavigate, goto } from '$app/navigation';
+  import { afterNavigate, goto, invalidateAll } from '$app/navigation';
   import { page } from '$app/stores';
+  import { clickOutside } from '$lib/actions/click-outside';
+  import { listNavigation } from '$lib/actions/list-navigation';
   import { scrollMemoryClearer } from '$lib/actions/scroll-memory';
   import ImageThumbnail from '$lib/components/assets/thumbnail/image-thumbnail.svelte';
   import EditNameInput from '$lib/components/faces-page/edit-name-input.svelte';
@@ -17,8 +19,10 @@
   import DownloadAction from '$lib/components/photos-page/actions/download-action.svelte';
   import FavoriteAction from '$lib/components/photos-page/actions/favorite-action.svelte';
   import SelectAllAssets from '$lib/components/photos-page/actions/select-all-assets.svelte';
+  import TagAction from '$lib/components/photos-page/actions/tag-action.svelte';
   import AssetGrid from '$lib/components/photos-page/asset-grid.svelte';
   import AssetSelectControlBar from '$lib/components/photos-page/asset-select-control-bar.svelte';
+  import ButtonContextMenu from '$lib/components/shared-components/context-menu/button-context-menu.svelte';
   import MenuOption from '$lib/components/shared-components/context-menu/menu-option.svelte';
   import ControlAppBar from '$lib/components/shared-components/control-app-bar.svelte';
   import LoadingSpinner from '$lib/components/shared-components/loading-spinner.svelte';
@@ -27,12 +31,12 @@
     notificationController,
   } from '$lib/components/shared-components/notification/notification';
   import { AppRoute, PersonPageViewMode, QueryParameter, SessionStorageKey } from '$lib/constants';
-  import { createAssetInteractionStore } from '$lib/stores/asset-interaction.store';
+  import { AssetInteraction } from '$lib/stores/asset-interaction.svelte';
   import { assetViewingStore } from '$lib/stores/asset-viewing.store';
-  import { AssetStore } from '$lib/stores/assets.store';
+  import { AssetStore } from '$lib/stores/assets-store.svelte';
+  import { preferences } from '$lib/stores/user.store';
   import { websocketEvents } from '$lib/stores/websocket';
   import { getPeopleThumbnailUrl, handlePromiseError } from '$lib/utils';
-  import { clickOutside } from '$lib/actions/click-outside';
   import { handleError } from '$lib/utils/handle-error';
   import { isExternalUrl } from '$lib/utils/navigation';
   import {
@@ -51,13 +55,15 @@
     mdiDotsVertical,
     mdiEyeOffOutline,
     mdiEyeOutline,
+    mdiHeartMinusOutline,
+    mdiHeartOutline,
     mdiPlus,
   } from '@mdi/js';
   import { onDestroy, onMount } from 'svelte';
-  import type { PageData } from './$types';
-  import { listNavigation } from '$lib/actions/list-navigation';
   import { t } from 'svelte-i18n';
-  import ButtonContextMenu from '$lib/components/shared-components/context-menu/button-context-menu.svelte';
+  import type { PageData } from './$types';
+  import { locale } from '$lib/stores/preferences.store';
+  import { DateTime } from 'luxon';
 
   interface Props {
     data: PageData;
@@ -72,12 +78,12 @@
   const assetStore = new AssetStore(assetStoreOptions);
 
   $effect(() => {
+    // Check to trigger rebuild the timeline when navigating between people from the info panel
     assetStoreOptions.personId = data.person.id;
     handlePromiseError(assetStore.updateOptions(assetStoreOptions));
   });
 
-  const assetInteractionStore = createAssetInteractionStore();
-  const { selectedAssets, isMultiSelectState } = assetInteractionStore;
+  const assetInteraction = new AssetInteraction();
 
   let viewMode: PersonPageViewMode = $state(PersonPageViewMode.VIEW_ASSETS);
   let isEditingName = $state(false);
@@ -86,6 +92,7 @@
   let personMerge1: PersonResponseDto | undefined = $state();
   let personMerge2: PersonResponseDto | undefined = $state();
   let potentialMergePeople: PersonResponseDto[] = $state([]);
+  let isSuggestionSelectedByUser = $state(false);
 
   let personName = '';
   let suggestedPeople: PersonResponseDto[] = $state([]);
@@ -121,8 +128,8 @@
     if ($showAssetViewer || viewMode === PersonPageViewMode.SUGGEST_MERGE) {
       return;
     }
-    if ($isMultiSelectState) {
-      assetInteractionStore.clearMultiselect();
+    if (assetInteraction.selectionActive) {
+      assetInteraction.clearMultiselect();
       return;
     } else {
       await goto(previousRoute);
@@ -147,8 +154,8 @@
   });
 
   const handleUnmerge = () => {
-    $assetStore.removeAssets([...$selectedAssets].map((a) => a.id));
-    assetInteractionStore.clearMultiselect();
+    assetStore.removeAssets(assetInteraction.selectedAssetsArray.map((a) => a.id));
+    assetInteraction.clearMultiselect();
     viewMode = PersonPageViewMode.VIEW_ASSETS;
   };
 
@@ -174,6 +181,25 @@
     }
   };
 
+  const handleToggleFavorite = async () => {
+    try {
+      const updatedPerson = await updatePerson({
+        id: person.id,
+        personUpdateDto: { isFavorite: !person.isFavorite },
+      });
+
+      // Invalidate to reload the page data and have the favorite status updated
+      await invalidateAll();
+
+      notificationController.show({
+        message: updatedPerson.isFavorite ? $t('added_to_favorites') : $t('removed_from_favorites'),
+        type: NotificationType.Info,
+      });
+    } catch (error) {
+      handleError(error, $t('errors.unable_to_add_remove_favorites', { values: { favorite: person.isFavorite } }));
+    }
+  };
+
   const handleMerge = async (person: PersonResponseDto) => {
     await updateAssetCount();
     await handleGoBack();
@@ -192,7 +218,7 @@
       handleError(error, $t('errors.unable_to_set_feature_photo'));
     }
 
-    assetInteractionStore.clearMultiselect();
+    assetInteraction.clearMultiselect();
 
     viewMode = PersonPageViewMode.VIEW_ASSETS;
   };
@@ -227,15 +253,22 @@
     personName = person.name;
     personMerge1 = person;
     personMerge2 = person2;
+    isSuggestionSelectedByUser = true;
     viewMode = PersonPageViewMode.SUGGEST_MERGE;
   };
 
   const changeName = async () => {
     viewMode = PersonPageViewMode.VIEW_ASSETS;
     person.name = personName;
-    try {
-      isEditingName = false;
+    isEditingName = false;
 
+    if (isSuggestionSelectedByUser) {
+      // User canceled the merge
+      isSuggestionSelectedByUser = false;
+      return;
+    }
+
+    try {
       person = await updatePerson({ id: person.id, personUpdateDto: { name: personName } });
 
       notificationController.show({
@@ -322,6 +355,11 @@
     }
   };
 
+  const handleDeleteAssets = async (assetIds: string[]) => {
+    assetStore.removeAssets(assetIds);
+    await updateAssetCount();
+  };
+
   onDestroy(() => {
     assetStore.destroy();
   });
@@ -334,14 +372,11 @@
       handlePromiseError(updateAssetCount());
     }
   });
-
-  let isAllArchive = $derived([...$selectedAssets].every((asset) => asset.isArchived));
-  let isAllFavorite = $derived([...$selectedAssets].every((asset) => asset.isFavorite));
 </script>
 
 {#if viewMode === PersonPageViewMode.UNASSIGN_ASSETS}
   <UnMergeFaceSelector
-    assetIds={[...$selectedAssets].map((a) => a.id)}
+    assetIds={assetInteraction.selectedAssetsArray.map((a) => a.id)}
     personAssets={person}
     onClose={() => (viewMode = PersonPageViewMode.VIEW_ASSETS)}
     onConfirm={handleUnmerge}
@@ -372,16 +407,19 @@
 {/if}
 
 <header>
-  {#if $isMultiSelectState}
-    <AssetSelectControlBar assets={$selectedAssets} clearSelect={() => assetInteractionStore.clearMultiselect()}>
+  {#if assetInteraction.selectionActive}
+    <AssetSelectControlBar
+      assets={assetInteraction.selectedAssets}
+      clearSelect={() => assetInteraction.clearMultiselect()}
+    >
       <CreateSharedLink />
-      <SelectAllAssets {assetStore} {assetInteractionStore} />
+      <SelectAllAssets {assetStore} {assetInteraction} />
       <ButtonContextMenu icon={mdiPlus} title={$t('add_to')}>
         <AddToAlbum />
         <AddToAlbum shared />
       </ButtonContextMenu>
-      <FavoriteAction removeFavorite={isAllFavorite} onFavorite={() => assetStore.triggerUpdate()} />
-      <ButtonContextMenu icon={mdiDotsVertical} title={$t('add')}>
+      <FavoriteAction removeFavorite={assetInteraction.isAllFavorite} />
+      <ButtonContextMenu icon={mdiDotsVertical} title={$t('menu')}>
         <DownloadAction menuItem filename="{person.name || 'immich'}.zip" />
         <MenuOption
           icon={mdiAccountMultipleCheckOutline}
@@ -390,8 +428,15 @@
         />
         <ChangeDate menuItem />
         <ChangeLocation menuItem />
-        <ArchiveAction menuItem unarchive={isAllArchive} onArchive={(assetIds) => $assetStore.removeAssets(assetIds)} />
-        <DeleteAssets menuItem onAssetDelete={(assetIds) => $assetStore.removeAssets(assetIds)} />
+        <ArchiveAction
+          menuItem
+          unarchive={assetInteraction.isAllArchived}
+          onArchive={(assetIds) => assetStore.removeAssets(assetIds)}
+        />
+        {#if $preferences.tags.enabled && assetInteraction.isAllUserOwned}
+          <TagAction menuItem />
+        {/if}
+        <DeleteAssets menuItem onAssetDelete={(assetIds) => handleDeleteAssets(assetIds)} />
       </ButtonContextMenu>
     </AssetSelectControlBar>
   {:else}
@@ -418,6 +463,11 @@
               text={$t('merge_people')}
               icon={mdiAccountMultipleCheckOutline}
               onClick={() => (viewMode = PersonPageViewMode.MERGE_PEOPLE)}
+            />
+            <MenuOption
+              icon={person.isFavorite ? mdiHeartMinusOutline : mdiHeartOutline}
+              text={person.isFavorite ? $t('unfavorite') : $t('to_favorite')}
+              onClick={handleToggleFavorite}
             />
           </ButtonContextMenu>
         {/snippet}
@@ -446,8 +496,9 @@
   {#key person.id}
     <AssetGrid
       enableRouting={true}
+      {person}
       {assetStore}
-      {assetInteractionStore}
+      {assetInteraction}
       isSelectionMode={viewMode === PersonPageViewMode.SELECT_PERSON}
       singleSelect={viewMode === PersonPageViewMode.SELECT_PERSON}
       onSelect={handleSelectFeaturePhoto}
@@ -490,12 +541,28 @@
                     heightStyle="3.375rem"
                   />
                   <div
-                    class="flex flex-col justify-center text-left px-4 h-14 text-immich-primary dark:text-immich-dark-primary"
+                    class="flex flex-col justify-center text-left px-4 text-immich-primary dark:text-immich-dark-primary"
                   >
                     <p class="w-40 sm:w-72 font-medium truncate">{person.name || $t('add_a_name')}</p>
-                    <p class="absolute w-fit text-sm text-gray-500 dark:text-immich-gray bottom-0">
+                    <p class="text-sm text-gray-500 dark:text-immich-gray">
                       {$t('assets_count', { values: { count: numberOfAssets } })}
                     </p>
+                    {#if person.birthDate}
+                      <p class="text-sm text-gray-500 dark:text-immich-gray">
+                        {$t('person_birthdate', {
+                          values: {
+                            date: DateTime.fromISO(person.birthDate).toLocaleString(
+                              {
+                                month: 'numeric',
+                                day: 'numeric',
+                                year: 'numeric',
+                              },
+                              { locale: $locale },
+                            ),
+                          },
+                        })}
+                      </p>
+                    {/if}
                   </div>
                 </button>
               </div>

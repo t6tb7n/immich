@@ -2,9 +2,9 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
-import 'package:immich_mobile/extensions/build_context_extensions.dart';
 import 'package:immich_mobile/entities/asset.entity.dart';
-import 'package:immich_mobile/pages/common/video_viewer.page.dart';
+import 'package:immich_mobile/extensions/build_context_extensions.dart';
+import 'package:immich_mobile/pages/common/native_video_viewer.page.dart';
 import 'package:immich_mobile/utils/hooks/blurhash_hook.dart';
 import 'package:immich_mobile/widgets/common/immich_image.dart';
 
@@ -68,18 +68,21 @@ class MemoryCard extends StatelessWidget {
               } else {
                 return Hero(
                   tag: 'memory-${asset.id}',
-                  child: VideoViewerPage(
-                    key: ValueKey(asset),
-                    asset: asset,
-                    showDownloadingIndicator: false,
-                    placeholder: SizedBox.expand(
-                      child: ImmichImage(
+                  child: SizedBox(
+                    width: context.width,
+                    height: context.height,
+                    child: NativeVideoViewerPage(
+                      key: ValueKey(asset.id),
+                      asset: asset,
+                      showControls: false,
+                      playbackDelayFactor: 2,
+                      image: ImmichImage(
                         asset,
-                        fit: fit,
+                        width: context.width,
+                        height: context.height,
+                        fit: BoxFit.contain,
                       ),
                     ),
-                    hideControlsTimer: const Duration(seconds: 2),
-                    showControls: false,
                   ),
                 );
               }
@@ -123,7 +126,7 @@ class _BlurredBackdrop extends HookWidget {
           ),
         ),
         child: Container(
-          color: Colors.black.withOpacity(0.2),
+          color: Colors.black.withValues(alpha: 0.2),
         ),
       );
     } else {
@@ -137,12 +140,14 @@ class _BlurredBackdrop extends HookWidget {
             image: DecorationImage(
               image: ImmichImage.imageProvider(
                 asset: asset,
+                height: context.height,
+                width: context.width,
               ),
               fit: BoxFit.cover,
             ),
           ),
           child: Container(
-            color: Colors.black.withOpacity(0.2),
+            color: Colors.black.withValues(alpha: 0.2),
           ),
         ),
       );

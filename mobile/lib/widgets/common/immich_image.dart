@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:immich_mobile/domain/models/store.model.dart';
+import 'package:immich_mobile/entities/asset.entity.dart';
+import 'package:immich_mobile/entities/store.entity.dart';
 import 'package:immich_mobile/extensions/build_context_extensions.dart';
 import 'package:immich_mobile/providers/image/immich_local_image_provider.dart';
 import 'package:immich_mobile/providers/image/immich_remote_image_provider.dart';
 import 'package:immich_mobile/widgets/asset_grid/thumbnail_placeholder.dart';
-import 'package:immich_mobile/entities/asset.entity.dart';
-import 'package:immich_mobile/entities/store.entity.dart';
 import 'package:octo_image/octo_image.dart';
 
 class ImmichImage extends StatelessWidget {
@@ -28,12 +29,11 @@ class ImmichImage extends StatelessWidget {
   // either by using the asset ID or the asset itself
   /// [asset] is the Asset to request, or else use [assetId] to get a remote
   /// image provider
-  /// Use [isThumbnail] and [thumbnailSize] if you'd like to request a thumbnail
-  /// The size of the square thumbnail to request. Ignored if isThumbnail
-  /// is not true
   static ImageProvider imageProvider({
     Asset? asset,
     String? assetId,
+    double width = 1080,
+    double height = 1920,
   }) {
     if (asset == null && assetId == null) {
       throw Exception('Must supply either asset or assetId');
@@ -48,6 +48,8 @@ class ImmichImage extends StatelessWidget {
     if (useLocal(asset)) {
       return ImmichLocalImageProvider(
         asset: asset,
+        width: width,
+        height: height,
       );
     } else {
       return ImmichRemoteImageProvider(
@@ -87,6 +89,8 @@ class ImmichImage extends StatelessWidget {
       },
       image: ImmichImage.imageProvider(
         asset: asset,
+        width: context.width,
+        height: context.height,
       ),
       width: width,
       height: height,

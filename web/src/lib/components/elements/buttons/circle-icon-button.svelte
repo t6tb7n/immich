@@ -1,5 +1,5 @@
 <script lang="ts" module>
-  export type Color = 'transparent' | 'light' | 'dark' | 'gray' | 'primary' | 'opaque' | 'alert';
+  export type Color = 'transparent' | 'light' | 'dark' | 'red' | 'gray' | 'primary' | 'opaque' | 'alert' | 'neutral';
   export type Padding = '1' | '2' | '3';
 </script>
 
@@ -64,9 +64,12 @@
     transparent: 'bg-transparent hover:bg-[#d3d3d3] dark:text-immich-dark-fg',
     opaque: 'bg-transparent hover:bg-immich-bg/30 text-white hover:dark:text-white',
     light: 'bg-white hover:bg-[#d3d3d3]',
+    red: 'text-red-400 bg-red-100 hover:bg-[#d3d3d3]',
     dark: 'bg-[#202123] hover:bg-[#d3d3d3]',
     alert: 'text-[#ff0000] hover:text-white',
     gray: 'bg-[#d3d3d3] hover:bg-[#e2e7e9] text-immich-dark-gray hover:text-black',
+    neutral:
+      'dark:bg-immich-dark-gray dark:text-gray-300 hover:dark:bg-immich-dark-gray/50 hover:dark:text-gray-300 bg-gray-200 text-gray-700 hover:bg-gray-300',
     primary:
       'bg-immich-primary dark:bg-immich-dark-primary hover:bg-immich-primary/75 hover:dark:bg-immich-dark-primary/80 text-white dark:text-immich-dark-gray',
   };
@@ -82,7 +85,6 @@
   let paddingClass = $derived(paddingClasses[padding]);
 </script>
 
-<!-- svelte-ignore a11y_no_static_element_interactions -->
 <svelte:element
   this={href ? 'a' : 'button'}
   type={href ? undefined : type}

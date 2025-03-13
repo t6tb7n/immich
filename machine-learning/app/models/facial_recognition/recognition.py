@@ -12,7 +12,7 @@ from PIL import Image
 
 from app.config import log, settings
 from app.models.base import InferenceModel
-from app.models.transforms import decode_cv2
+from app.models.transforms import decode_cv2, serialize_np_array
 from app.schemas import FaceDetectionOutput, FacialRecognitionOutput, ModelFormat, ModelSession, ModelTask, ModelType
 
 
@@ -20,9 +20,8 @@ class FaceRecognizer(InferenceModel):
     depends = [(ModelType.DETECTION, ModelTask.FACIAL_RECOGNITION)]
     identity = (ModelType.RECOGNITION, ModelTask.FACIAL_RECOGNITION)
 
-    def __init__(self, model_name: str, min_score: float = 0.7, **model_kwargs: Any) -> None:
+    def __init__(self, model_name: str, **model_kwargs: Any) -> None:
         super().__init__(model_name, **model_kwargs)
-        self.min_score = model_kwargs.pop("minScore", min_score)
         max_batch_size = settings.max_batch_size.facial_recognition if settings.max_batch_size else None
         self.batch_size = max_batch_size if max_batch_size else self._batch_size_default
 
@@ -61,7 +60,7 @@ class FaceRecognizer(InferenceModel):
         return [
             {
                 "boundingBox": {"x1": x1, "y1": y1, "x2": x2, "y2": y2},
-                "embedding": embedding,
+                "embedding": serialize_np_array(embedding),
                 "score": score,
             }
             for (x1, y1, x2, y2), embedding, score in zip(faces["boxes"], embeddings, faces["scores"])

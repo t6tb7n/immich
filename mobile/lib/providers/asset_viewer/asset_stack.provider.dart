@@ -1,59 +1,44 @@
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:immich_mobile/entities/asset.entity.dart';
-import 'package:immich_mobile/providers/db.provider.dart';
-import 'package:isar/isar.dart';
+import 'package:immich_mobile/services/asset.service.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'asset_stack.provider.g.dart';
 
 class AssetStackNotifier extends StateNotifier<List<Asset>> {
-  final Asset _asset;
-  final Ref _ref;
+  final AssetService assetService;
+  final String _stackId;
 
-  AssetStackNotifier(
-    this._asset,
-    this._ref,
-  ) : super([]) {
-    fetchStackChildren();
+  AssetStackNotifier(this.assetService, this._stackId) : super([]) {
+    _fetchStack(_stackId);
   }
 
-  void fetchStackChildren() async {
-    if (mounted) {
-      state = await _ref.read(assetStackProvider(_asset).future);
+  void _fetchStack(String stackId) async {
+    if (!mounted) {
+      return;
+    }
+
+    final stack = await assetService.getStackAssets(stackId);
+    if (stack.isNotEmpty) {
+      state = stack;
     }
   }
 
   void removeChild(int index) {
     if (index < state.length) {
       state.removeAt(index);
+      state = List<Asset>.from(state);
     }
   }
 }
 
 final assetStackStateProvider = StateNotifierProvider.autoDispose
-    .family<AssetStackNotifier, List<Asset>, Asset>(
-  (ref, asset) => AssetStackNotifier(asset, ref),
+    .family<AssetStackNotifier, List<Asset>, String>(
+  (ref, stackId) =>
+      AssetStackNotifier(ref.watch(assetServiceProvider), stackId),
 );
 
-final assetStackProvider =
-    FutureProvider.autoDispose.family<List<Asset>, Asset>((ref, asset) async {
-  // Guard [local asset]
-  if (asset.remoteId == null) {
-    return [];
-  }
-
-  return await ref
-      .watch(dbProvider)
-      .assets
-      .filter()
-      .isArchivedEqualTo(false)
-      .isTrashedEqualTo(false)
-      .stackPrimaryAssetIdEqualTo(asset.remoteId)
-      .sortByFileCreatedAtDesc()
-      .findAll();
-});
-
 @riverpod
-int assetStackIndex(AssetStackIndexRef ref, Asset asset) {
+int assetStackIndex(Ref ref, Asset asset) {
   return -1;
 }

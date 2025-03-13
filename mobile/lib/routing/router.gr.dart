@@ -83,7 +83,6 @@ class AlbumAssetSelectionRoute
     Key? key,
     required Set<Asset> existingAssets,
     bool canDeselect = false,
-    required QueryBuilder<Asset, Asset, QAfterSortBy>? query,
     List<PageRouteInfo>? children,
   }) : super(
           AlbumAssetSelectionRoute.name,
@@ -91,7 +90,6 @@ class AlbumAssetSelectionRoute
             key: key,
             existingAssets: existingAssets,
             canDeselect: canDeselect,
-            query: query,
           ),
           initialChildren: children,
         );
@@ -106,7 +104,6 @@ class AlbumAssetSelectionRoute
         key: args.key,
         existingAssets: args.existingAssets,
         canDeselect: args.canDeselect,
-        query: args.query,
       );
     },
   );
@@ -117,7 +114,6 @@ class AlbumAssetSelectionRouteArgs {
     this.key,
     required this.existingAssets,
     this.canDeselect = false,
-    required this.query,
   });
 
   final Key? key;
@@ -126,27 +122,18 @@ class AlbumAssetSelectionRouteArgs {
 
   final bool canDeselect;
 
-  final QueryBuilder<Asset, Asset, QAfterSortBy>? query;
-
   @override
   String toString() {
-    return 'AlbumAssetSelectionRouteArgs{key: $key, existingAssets: $existingAssets, canDeselect: $canDeselect, query: $query}';
+    return 'AlbumAssetSelectionRouteArgs{key: $key, existingAssets: $existingAssets, canDeselect: $canDeselect}';
   }
 }
 
 /// generated route for
 /// [AlbumOptionsPage]
-class AlbumOptionsRoute extends PageRouteInfo<AlbumOptionsRouteArgs> {
-  AlbumOptionsRoute({
-    Key? key,
-    required Album album,
-    List<PageRouteInfo>? children,
-  }) : super(
+class AlbumOptionsRoute extends PageRouteInfo<void> {
+  const AlbumOptionsRoute({List<PageRouteInfo>? children})
+      : super(
           AlbumOptionsRoute.name,
-          args: AlbumOptionsRouteArgs(
-            key: key,
-            album: album,
-          ),
           initialChildren: children,
         );
 
@@ -155,29 +142,9 @@ class AlbumOptionsRoute extends PageRouteInfo<AlbumOptionsRouteArgs> {
   static PageInfo page = PageInfo(
     name,
     builder: (data) {
-      final args = data.argsAs<AlbumOptionsRouteArgs>();
-      return AlbumOptionsPage(
-        key: args.key,
-        album: args.album,
-      );
+      return const AlbumOptionsPage();
     },
   );
-}
-
-class AlbumOptionsRouteArgs {
-  const AlbumOptionsRouteArgs({
-    this.key,
-    required this.album,
-  });
-
-  final Key? key;
-
-  final Album album;
-
-  @override
-  String toString() {
-    return 'AlbumOptionsRouteArgs{key: $key, album: $album}';
-  }
 }
 
 /// generated route for
@@ -419,7 +386,7 @@ class AllVideosRoute extends PageRouteInfo<void> {
 class AppLogDetailRoute extends PageRouteInfo<AppLogDetailRouteArgs> {
   AppLogDetailRoute({
     Key? key,
-    required LoggerMessage logMessage,
+    required LogMessage logMessage,
     List<PageRouteInfo>? children,
   }) : super(
           AppLogDetailRoute.name,
@@ -452,7 +419,7 @@ class AppLogDetailRouteArgs {
 
   final Key? key;
 
-  final LoggerMessage logMessage;
+  final LogMessage logMessage;
 
   @override
   String toString() {
@@ -822,6 +789,53 @@ class FilterImageRouteArgs {
 }
 
 /// generated route for
+/// [FolderPage]
+class FolderRoute extends PageRouteInfo<FolderRouteArgs> {
+  FolderRoute({
+    Key? key,
+    RecursiveFolder? folder,
+    List<PageRouteInfo>? children,
+  }) : super(
+          FolderRoute.name,
+          args: FolderRouteArgs(
+            key: key,
+            folder: folder,
+          ),
+          initialChildren: children,
+        );
+
+  static const String name = 'FolderRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      final args =
+          data.argsAs<FolderRouteArgs>(orElse: () => const FolderRouteArgs());
+      return FolderPage(
+        key: args.key,
+        folder: args.folder,
+      );
+    },
+  );
+}
+
+class FolderRouteArgs {
+  const FolderRouteArgs({
+    this.key,
+    this.folder,
+  });
+
+  final Key? key;
+
+  final RecursiveFolder? folder;
+
+  @override
+  String toString() {
+    return 'FolderRouteArgs{key: $key, folder: $folder}';
+  }
+}
+
+/// generated route for
 /// [GalleryViewerPage]
 class GalleryViewerRoute extends PageRouteInfo<GalleryViewerRouteArgs> {
   GalleryViewerRoute({
@@ -1076,6 +1090,70 @@ class MemoryRouteArgs {
   @override
   String toString() {
     return 'MemoryRouteArgs{memories: $memories, memoryIndex: $memoryIndex, key: $key}';
+  }
+}
+
+/// generated route for
+/// [NativeVideoViewerPage]
+class NativeVideoViewerRoute extends PageRouteInfo<NativeVideoViewerRouteArgs> {
+  NativeVideoViewerRoute({
+    Key? key,
+    required Asset asset,
+    required Widget image,
+    bool showControls = true,
+    int playbackDelayFactor = 1,
+    List<PageRouteInfo>? children,
+  }) : super(
+          NativeVideoViewerRoute.name,
+          args: NativeVideoViewerRouteArgs(
+            key: key,
+            asset: asset,
+            image: image,
+            showControls: showControls,
+            playbackDelayFactor: playbackDelayFactor,
+          ),
+          initialChildren: children,
+        );
+
+  static const String name = 'NativeVideoViewerRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      final args = data.argsAs<NativeVideoViewerRouteArgs>();
+      return NativeVideoViewerPage(
+        key: args.key,
+        asset: args.asset,
+        image: args.image,
+        showControls: args.showControls,
+        playbackDelayFactor: args.playbackDelayFactor,
+      );
+    },
+  );
+}
+
+class NativeVideoViewerRouteArgs {
+  const NativeVideoViewerRouteArgs({
+    this.key,
+    required this.asset,
+    required this.image,
+    this.showControls = true,
+    this.playbackDelayFactor = 1,
+  });
+
+  final Key? key;
+
+  final Asset asset;
+
+  final Widget image;
+
+  final bool showControls;
+
+  final int playbackDelayFactor;
+
+  @override
+  String toString() {
+    return 'NativeVideoViewerRouteArgs{key: $key, asset: $asset, image: $image, showControls: $showControls, playbackDelayFactor: $playbackDelayFactor}';
   }
 }
 
@@ -1400,6 +1478,52 @@ class SettingsSubRouteArgs {
   @override
   String toString() {
     return 'SettingsSubRouteArgs{section: $section, key: $key}';
+  }
+}
+
+/// generated route for
+/// [ShareIntentPage]
+class ShareIntentRoute extends PageRouteInfo<ShareIntentRouteArgs> {
+  ShareIntentRoute({
+    Key? key,
+    required List<ShareIntentAttachment> attachments,
+    List<PageRouteInfo>? children,
+  }) : super(
+          ShareIntentRoute.name,
+          args: ShareIntentRouteArgs(
+            key: key,
+            attachments: attachments,
+          ),
+          initialChildren: children,
+        );
+
+  static const String name = 'ShareIntentRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      final args = data.argsAs<ShareIntentRouteArgs>();
+      return ShareIntentPage(
+        key: args.key,
+        attachments: args.attachments,
+      );
+    },
+  );
+}
+
+class ShareIntentRouteArgs {
+  const ShareIntentRouteArgs({
+    this.key,
+    required this.attachments,
+  });
+
+  final Key? key;
+
+  final List<ShareIntentAttachment> attachments;
+
+  @override
+  String toString() {
+    return 'ShareIntentRouteArgs{key: $key, attachments: $attachments}';
   }
 }
 

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { beforeNavigate } from '$app/navigation';
   import UserPageLayout from '$lib/components/layouts/user-page-layout.svelte';
   import AddToAlbum from '$lib/components/photos-page/actions/add-to-album.svelte';
   import ArchiveAction from '$lib/components/photos-page/actions/archive-action.svelte';
@@ -19,9 +20,10 @@
   import ButtonContextMenu from '$lib/components/shared-components/context-menu/button-context-menu.svelte';
   import EmptyPlaceholder from '$lib/components/shared-components/empty-placeholder.svelte';
   import { AssetAction } from '$lib/constants';
-  import { createAssetInteractionStore } from '$lib/stores/asset-interaction.store';
+  import { AssetInteraction } from '$lib/stores/asset-interaction.svelte';
   import { assetViewingStore } from '$lib/stores/asset-viewing.store';
-  import { AssetStore } from '$lib/stores/assets.store';
+  import { AssetStore } from '$lib/stores/assets-store.svelte';
+  import { isFaceEditMode } from '$lib/stores/face-edit.svelte';
   import { preferences, user } from '$lib/stores/user.store';
   import type { OnLink, OnUnlink } from '$lib/utils/actions';
   import { openFileUploadDialog } from '$lib/utils/file-uploader';
@@ -32,33 +34,25 @@
 
   let { isViewing: showAssetViewer } = assetViewingStore;
   const assetStore = new AssetStore({ isArchived: false, withStacked: true, withPartners: true });
-  const assetInteractionStore = createAssetInteractionStore();
-  const { isMultiSelectState, selectedAssets } = assetInteractionStore;
+  const assetInteraction = new AssetInteraction();
 
-  let isAllFavorite = $state(false);
-  let isAllOwned = $state(false);
-  let isAssetStackSelected = $state(false);
-  let isLinkActionAvailable = $state(false);
-
-  $effect(() => {
-    const selection = [...$selectedAssets];
-    isAllOwned = selection.every((asset) => asset.ownerId === $user.id);
-    isAllFavorite = selection.every((asset) => asset.isFavorite);
-    isAssetStackSelected = selection.length === 1 && !!selection[0].stack;
-    const isLivePhoto = selection.length === 1 && !!selection[0].livePhotoVideoId;
+  let selectedAssets = $derived(assetInteraction.selectedAssetsArray);
+  let isAssetStackSelected = $derived(selectedAssets.length === 1 && !!selectedAssets[0].stack);
+  let isLinkActionAvailable = $derived.by(() => {
+    const isLivePhoto = selectedAssets.length === 1 && !!selectedAssets[0].livePhotoVideoId;
     const isLivePhotoCandidate =
-      selection.length === 2 &&
-      selection.some((asset) => asset.type === AssetTypeEnum.Image) &&
-      selection.some((asset) => asset.type === AssetTypeEnum.Image);
-    isLinkActionAvailable = isAllOwned && (isLivePhoto || isLivePhotoCandidate);
-  });
+      selectedAssets.length === 2 &&
+      selectedAssets.some((asset) => asset.type === AssetTypeEnum.Image) &&
+      selectedAssets.some((asset) => asset.type === AssetTypeEnum.Video);
 
+    return assetInteraction.isAllUserOwned && (isLivePhoto || isLivePhotoCandidate);
+  });
   const handleEscape = () => {
     if ($showAssetViewer) {
       return;
     }
-    if ($isMultiSelectState) {
-      assetInteractionStore.clearMultiselect();
+    if (assetInteraction.selectionActive) {
+      assetInteraction.clearMultiselect();
       return;
     }
   };
@@ -76,24 +70,28 @@
   onDestroy(() => {
     assetStore.destroy();
   });
+
+  beforeNavigate(() => {
+    isFaceEditMode.value = false;
+  });
 </script>
 
-{#if $isMultiSelectState}
+{#if assetInteraction.selectionActive}
   <AssetSelectControlBar
     ownerId={$user.id}
-    assets={$selectedAssets}
-    clearSelect={() => assetInteractionStore.clearMultiselect()}
+    assets={assetInteraction.selectedAssets}
+    clearSelect={() => assetInteraction.clearMultiselect()}
   >
     <CreateSharedLink />
-    <SelectAllAssets {assetStore} {assetInteractionStore} />
+    <SelectAllAssets {assetStore} {assetInteraction} />
     <ButtonContextMenu icon={mdiPlus} title={$t('add_to')}>
       <AddToAlbum />
       <AddToAlbum shared />
     </ButtonContextMenu>
-    <FavoriteAction removeFavorite={isAllFavorite} onFavorite={() => assetStore.triggerUpdate()} />
+    <FavoriteAction removeFavorite={assetInteraction.isAllFavorite} />
     <ButtonContextMenu icon={mdiDotsVertical} title={$t('menu')}>
       <DownloadAction menuItem />
-      {#if $selectedAssets.size > 1 || isAssetStackSelected}
+      {#if assetInteraction.selectedAssets.size > 1 || isAssetStackSelected}
         <StackAction
           unstack={isAssetStackSelected}
           onStack={(assetIds) => assetStore.removeAssets(assetIds)}
@@ -103,7 +101,7 @@
       {#if isLinkActionAvailable}
         <LinkLivePhotoAction
           menuItem
-          unlink={[...$selectedAssets].length === 1}
+          unlink={assetInteraction.selectedAssets.size === 1}
           onLink={handleLink}
           onUnlink={handleUnlink}
         />
@@ -121,11 +119,11 @@
   </AssetSelectControlBar>
 {/if}
 
-<UserPageLayout hideNavbar={$isMultiSelectState} showUploadButton scrollbar={false}>
+<UserPageLayout hideNavbar={assetInteraction.selectionActive} showUploadButton scrollbar={false}>
   <AssetGrid
     enableRouting={true}
     {assetStore}
-    {assetInteractionStore}
+    {assetInteraction}
     removeAction={AssetAction.ARCHIVE}
     onEscape={handleEscape}
     withStacked

@@ -6,6 +6,7 @@ import 'package:cancellation_token_http/http.dart' as http;
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:immich_mobile/domain/models/store.model.dart';
 import 'package:immich_mobile/entities/album.entity.dart';
 import 'package:immich_mobile/entities/asset.entity.dart';
 import 'package:immich_mobile/entities/backup_album.entity.dart';
@@ -314,7 +315,8 @@ class BackupService {
           }
         } else {
           if (asset.type == AssetType.video) {
-            file = await asset.local!.originFile;
+            file = await asset.local!.originFile
+                .timeout(const Duration(seconds: 5));
           } else {
             if (Platform.isLinux || Platform.isWindows) {
               file = File(asset.fileName);
@@ -526,18 +528,12 @@ class BackupService {
     return responseBody.containsKey('id') ? responseBody['id'] : null;
   }
 
-  String _getAssetType(AssetType assetType) {
-    switch (assetType) {
-      case AssetType.audio:
-        return "AUDIO";
-      case AssetType.image:
-        return "IMAGE";
-      case AssetType.video:
-        return "VIDEO";
-      case AssetType.other:
-        return "OTHER";
-    }
-  }
+  String _getAssetType(AssetType assetType) => switch (assetType) {
+        AssetType.audio => "AUDIO",
+        AssetType.image => "IMAGE",
+        AssetType.video => "VIDEO",
+        AssetType.other => "OTHER",
+      };
 }
 
 class MultipartRequest extends http.MultipartRequest {

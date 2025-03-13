@@ -1,12 +1,16 @@
 import 'dart:convert';
+import 'dart:io';
 
-import 'package:immich_mobile/entities/exif_info.entity.dart';
+import 'package:immich_mobile/domain/models/exif.model.dart';
+import 'package:immich_mobile/extensions/string_extensions.dart';
+import 'package:immich_mobile/infrastructure/entities/exif.entity.dart'
+    as entity;
+import 'package:immich_mobile/infrastructure/utils/exif.converter.dart';
 import 'package:immich_mobile/utils/hash.dart';
 import 'package:isar/isar.dart';
 import 'package:openapi/api.dart';
-import 'package:photo_manager/photo_manager.dart' show AssetEntity;
-import 'package:immich_mobile/extensions/string_extensions.dart';
 import 'package:path/path.dart' as p;
+import 'package:photo_manager/photo_manager.dart' show AssetEntity;
 
 part 'asset.entity.g.dart';
 
@@ -22,16 +26,13 @@ class Asset {
         durationInSeconds = remote.duration.toDuration()?.inSeconds ?? 0,
         type = remote.type.toAssetType(),
         fileName = remote.originalFileName,
-        height = isFlipped(remote)
-            ? remote.exifInfo?.exifImageWidth?.toInt()
-            : remote.exifInfo?.exifImageHeight?.toInt(),
-        width = isFlipped(remote)
-            ? remote.exifInfo?.exifImageHeight?.toInt()
-            : remote.exifInfo?.exifImageWidth?.toInt(),
+        height = remote.exifInfo?.exifImageHeight?.toInt(),
+        width = remote.exifInfo?.exifImageWidth?.toInt(),
         livePhotoVideoId = remote.livePhotoVideoId,
         ownerId = fastHash(remote.ownerId),
-        exifInfo =
-            remote.exifInfo != null ? ExifInfo.fromDto(remote.exifInfo!) : null,
+        exifInfo = remote.exifInfo == null
+            ? null
+            : ExifDtoConverter.fromDto(remote.exifInfo!),
         isFavorite = remote.isFavorite,
         isArchived = remote.isArchived,
         isTrashed = remote.isTrashed,
@@ -93,6 +94,27 @@ class Asset {
 
   set local(AssetEntity? assetEntity) => _local = assetEntity;
 
+  @ignore
+  bool _didUpdateLocal = false;
+
+  @ignore
+  Future<AssetEntity> get localAsync async {
+    final local = this.local;
+    if (local == null) {
+      throw Exception('Asset $fileName has no local data');
+    }
+
+    final updatedLocal =
+        _didUpdateLocal ? local : await local.obtainForNewProperties();
+    if (updatedLocal == null) {
+      throw Exception('Could not fetch local data for $fileName');
+    }
+
+    this.local = updatedLocal;
+    _didUpdateLocal = true;
+    return updatedLocal;
+  }
+
   Id id = Isar.autoIncrement;
 
   /// stores the raw SHA1 bytes as a base64 String
@@ -150,10 +172,21 @@ class Asset {
 
   int stackCount;
 
-  /// Aspect ratio of the asset
+  /// Returns null if the asset has no sync access to the exif info
   @ignore
-  double? get aspectRatio =>
-      width == null || height == null ? 0 : width! / height!;
+  double? get aspectRatio {
+    final orientatedWidth = this.orientatedWidth;
+    final orientatedHeight = this.orientatedHeight;
+
+    if (orientatedWidth != null &&
+        orientatedHeight != null &&
+        orientatedWidth > 0 &&
+        orientatedHeight > 0) {
+      return orientatedWidth.toDouble() / orientatedHeight.toDouble();
+    }
+
+    return null;
+  }
 
   /// `true` if this [Asset] is present on the device
   @ignore
@@ -171,6 +204,12 @@ class Asset {
 
   @ignore
   bool get isImage => type == AssetType.image;
+
+  @ignore
+  bool get isVideo => type == AssetType.video;
+
+  @ignore
+  bool get isMotionPhoto => livePhotoVideoId != null;
 
   @ignore
   AssetState get storage {
@@ -191,6 +230,50 @@ class Asset {
   // ignore: invalid_annotation_target
   @ignore
   set byteHash(List<int> hash) => checksum = base64.encode(hash);
+
+  /// Returns null if the asset has no sync access to the exif info
+  @ignore
+  @pragma('vm:prefer-inline')
+  bool? get isFlipped {
+    final exifInfo = this.exifInfo;
+    if (exifInfo != null) {
+      return exifInfo.isFlipped;
+    }
+
+    if (_didUpdateLocal && Platform.isAndroid) {
+      final local = this.local;
+      if (local == null) {
+        throw Exception('Asset $fileName has no local data');
+      }
+      return local.orientation == 90 || local.orientation == 270;
+    }
+
+    return null;
+  }
+
+  /// Returns null if the asset has no sync access to the exif info
+  @ignore
+  @pragma('vm:prefer-inline')
+  int? get orientatedHeight {
+    final isFlipped = this.isFlipped;
+    if (isFlipped == null) {
+      return null;
+    }
+
+    return isFlipped ? width : height;
+  }
+
+  /// Returns null if the asset has no sync access to the exif info
+  @ignore
+  @pragma('vm:prefer-inline')
+  int? get orientatedWidth {
+    final isFlipped = this.isFlipped;
+    if (isFlipped == null) {
+      return null;
+    }
+
+    return isFlipped ? height : width;
+  }
 
   @override
   bool operator ==(other) {
@@ -280,14 +363,14 @@ class Asset {
           localId: localId,
           width: a.width ?? width,
           height: a.height ?? height,
-          exifInfo: a.exifInfo?.copyWith(id: id) ?? exifInfo,
+          exifInfo: a.exifInfo?.copyWith(assetId: id) ?? exifInfo,
         );
       } else if (isRemote) {
         return _copyWith(
           localId: localId ?? a.localId,
           width: width ?? a.width,
           height: height ?? a.height,
-          exifInfo: exifInfo ?? a.exifInfo?.copyWith(id: id),
+          exifInfo: exifInfo ?? a.exifInfo?.copyWith(assetId: id),
         );
       } else {
         // TODO: Revisit this and remove all bool field assignments
@@ -328,7 +411,7 @@ class Asset {
           isArchived: a.isArchived,
           isTrashed: a.isTrashed,
           isOffline: a.isOffline,
-          exifInfo: a.exifInfo?.copyWith(id: id) ?? exifInfo,
+          exifInfo: a.exifInfo?.copyWith(assetId: id) ?? exifInfo,
           thumbhash: a.thumbhash,
         );
       } else {
@@ -337,7 +420,8 @@ class Asset {
           localId: localId ?? a.localId,
           width: width ?? a.width,
           height: height ?? a.height,
-          exifInfo: exifInfo ?? a.exifInfo?.copyWith(id: id),
+          exifInfo: exifInfo ??
+              a.exifInfo?.copyWith(assetId: id), // updated to use assetId
         );
       }
     }
@@ -397,8 +481,8 @@ class Asset {
   Future<void> put(Isar db) async {
     await db.assets.put(this);
     if (exifInfo != null) {
-      exifInfo!.id = id;
-      await db.exifInfos.put(exifInfo!);
+      await db.exifInfos
+          .put(entity.ExifInfo.fromDto(exifInfo!.copyWith(assetId: id)));
     }
   }
 
@@ -466,19 +550,13 @@ enum AssetType {
 }
 
 extension AssetTypeEnumHelper on AssetTypeEnum {
-  AssetType toAssetType() {
-    switch (this) {
-      case AssetTypeEnum.IMAGE:
-        return AssetType.image;
-      case AssetTypeEnum.VIDEO:
-        return AssetType.video;
-      case AssetTypeEnum.AUDIO:
-        return AssetType.audio;
-      case AssetTypeEnum.OTHER:
-        return AssetType.other;
-    }
-    throw Exception();
-  }
+  AssetType toAssetType() => switch (this) {
+        AssetTypeEnum.IMAGE => AssetType.image,
+        AssetTypeEnum.VIDEO => AssetType.video,
+        AssetTypeEnum.AUDIO => AssetType.audio,
+        AssetTypeEnum.OTHER => AssetType.other,
+        _ => throw Exception(),
+      };
 }
 
 /// Describes where the information of this asset came from:
@@ -510,22 +588,4 @@ extension AssetsHelper on IsarCollection<Asset> {
   ) {
     return where().anyOf(ids, (q, String e) => q.localIdEqualTo(e));
   }
-}
-
-/// Returns `true` if this [int] is flipped 90° clockwise
-bool isRotated90CW(int orientation) {
-  return [7, 8, -90].contains(orientation);
-}
-
-/// Returns `true` if this [int] is flipped 270° clockwise
-bool isRotated270CW(int orientation) {
-  return [5, 6, 90].contains(orientation);
-}
-
-/// Returns `true` if this [Asset] is flipped 90° or 270° clockwise
-bool isFlipped(AssetResponseDto response) {
-  final int orientation =
-      int.tryParse(response.exifInfo?.orientation ?? '0') ?? 0;
-  return orientation != 0 &&
-      (isRotated90CW(orientation) || isRotated270CW(orientation));
 }

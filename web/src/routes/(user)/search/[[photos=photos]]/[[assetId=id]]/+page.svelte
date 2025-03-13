@@ -16,7 +16,6 @@
   import ControlAppBar from '$lib/components/shared-components/control-app-bar.svelte';
   import GalleryViewer from '$lib/components/shared-components/gallery-viewer/gallery-viewer.svelte';
   import { cancelMultiselect } from '$lib/utils/asset-utils';
-  import { createAssetInteractionStore } from '$lib/stores/asset-interaction.store';
   import SearchBar from '$lib/components/shared-components/search-bar/search-bar.svelte';
   import { AppRoute, QueryParameter } from '$lib/constants';
   import { assetViewingStore } from '$lib/stores/asset-viewing.store';
@@ -30,9 +29,10 @@
     type SmartSearchDto,
     type MetadataSearchDto,
     type AlbumResponseDto,
+    getTagById,
   } from '@immich/sdk';
   import { mdiArrowLeft, mdiDotsVertical, mdiImageOffOutline, mdiPlus, mdiSelectAll } from '@mdi/js';
-  import type { Viewport } from '$lib/stores/assets.store';
+  import type { Viewport } from '$lib/stores/assets-store.svelte';
   import { locale } from '$lib/stores/preferences.store';
   import LoadingSpinner from '$lib/components/shared-components/loading-spinner.svelte';
   import { handlePromiseError } from '$lib/utils';
@@ -44,6 +44,9 @@
   import { t } from 'svelte-i18n';
   import { onMount, tick } from 'svelte';
   import AssetJobActions from '$lib/components/photos-page/actions/asset-job-actions.svelte';
+  import { preferences } from '$lib/stores/user.store';
+  import TagAction from '$lib/components/photos-page/actions/tag-action.svelte';
+  import { AssetInteraction } from '$lib/stores/asset-interaction.svelte';
 
   const MAX_ASSET_COUNT = 5000;
   let { isViewing: showAssetViewer } = assetViewingStore;
@@ -61,14 +64,9 @@
   let scrollY = $state(0);
   let scrollYHistory = 0;
 
-  const assetInteractionStore = createAssetInteractionStore();
-  const { selectedAssets } = assetInteractionStore;
+  const assetInteraction = new AssetInteraction();
 
   type SearchTerms = MetadataSearchDto & Pick<SmartSearchDto, 'query'>;
-
-  let isMultiSelectionMode = $derived($selectedAssets.size > 0);
-  let isAllArchived = $derived([...$selectedAssets].every((asset) => asset.isArchived));
-  let isAllFavorite = $derived([...$selectedAssets].every((asset) => asset.isFavorite));
   let searchQuery = $derived($page.url.searchParams.get(QueryParameter.QUERY));
 
   onMount(() => {
@@ -84,8 +82,8 @@
       return;
     }
 
-    if (isMultiSelectionMode) {
-      $selectedAssets = new Set();
+    if (assetInteraction.selectionActive) {
+      assetInteraction.selectedAssets.clear();
       return;
     }
     if (!$preventRaceConditionSearchBar) {
@@ -129,7 +127,7 @@
     searchResultAssets = searchResultAssets.filter((a: AssetResponseDto) => !assetIdSet.has(a.id));
   };
   const handleSelectAll = () => {
-    assetInteractionStore.selectAssets(searchResultAssets);
+    assetInteraction.selectAssets(searchResultAssets);
   };
 
   async function onSearchQueryUpdate() {
@@ -139,7 +137,7 @@
     await loadNextPage();
   }
 
-  export const loadNextPage = async () => {
+  const loadNextPage = async () => {
     if (!nextPage || searchResultAssets.length >= MAX_ASSET_COUNT) {
       return;
     }
@@ -195,8 +193,11 @@
       state: $t('state'),
       make: $t('camera_brand'),
       model: $t('camera_model'),
+      lensModel: $t('lens_model'),
       personIds: $t('people'),
+      tagIds: $t('tags'),
       originalFileName: $t('file_name'),
+      description: $t('description'),
     };
     return keyMap[key] || key;
   }
@@ -217,6 +218,19 @@
     return personNames.join(', ');
   }
 
+  async function getTagNames(tagIds: string[]) {
+    const tagNames = await Promise.all(
+      tagIds.map(async (tagId) => {
+        const tag = await getTagById({ id: tagId });
+
+        return tag.value;
+      }),
+    );
+
+    return tagNames.join(', ');
+  }
+
+  // eslint-disable-next-line no-self-assign
   const triggerAssetUpdate = () => (searchResultAssets = searchResultAssets);
 
   const onAddToAlbum = (assetIds: string[]) => {
@@ -234,22 +248,28 @@
 <svelte:window use:shortcut={{ shortcut: { key: 'Escape' }, onShortcut: onEscape }} bind:scrollY />
 
 <section>
-  {#if isMultiSelectionMode}
+  {#if assetInteraction.selectionActive}
     <div class="fixed z-[100] top-0 left-0 w-full">
-      <AssetSelectControlBar assets={$selectedAssets} clearSelect={() => cancelMultiselect(assetInteractionStore)}>
+      <AssetSelectControlBar
+        assets={assetInteraction.selectedAssets}
+        clearSelect={() => cancelMultiselect(assetInteraction)}
+      >
         <CreateSharedLink />
         <CircleIconButton title={$t('select_all')} icon={mdiSelectAll} onclick={handleSelectAll} />
         <ButtonContextMenu icon={mdiPlus} title={$t('add_to')}>
           <AddToAlbum {onAddToAlbum} />
           <AddToAlbum shared {onAddToAlbum} />
         </ButtonContextMenu>
-        <FavoriteAction removeFavorite={isAllFavorite} onFavorite={triggerAssetUpdate} />
+        <FavoriteAction removeFavorite={assetInteraction.isAllFavorite} onFavorite={triggerAssetUpdate} />
 
-        <ButtonContextMenu icon={mdiDotsVertical} title={$t('add')}>
+        <ButtonContextMenu icon={mdiDotsVertical} title={$t('menu')}>
           <DownloadAction menuItem />
           <ChangeDate menuItem />
           <ChangeLocation menuItem />
-          <ArchiveAction menuItem unarchive={isAllArchived} onArchive={triggerAssetUpdate} />
+          <ArchiveAction menuItem unarchive={assetInteraction.isAllArchived} onArchive={triggerAssetUpdate} />
+          {#if $preferences.tags.enabled && assetInteraction.isAllUserOwned}
+            <TagAction menuItem />
+          {/if}
           <DeleteAssets menuItem {onAssetDelete} />
           <hr />
           <AssetJobActions />
@@ -295,6 +315,10 @@
               {#await getPersonName(value) then personName}
                 {personName}
               {/await}
+            {:else if key === 'tagIds' && Array.isArray(value)}
+              {#await getTagNames(value) then tagNames}
+                {tagNames}
+              {/await}
             {:else if value === null || value === ''}
               {$t('unknown')}
             {:else}
@@ -327,7 +351,7 @@
       {#if searchResultAssets.length > 0}
         <GalleryViewer
           assets={searchResultAssets}
-          {assetInteractionStore}
+          {assetInteraction}
           onIntersected={loadNextPage}
           showArchiveIcon={true}
           {viewport}

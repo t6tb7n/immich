@@ -32,7 +32,7 @@ Immich requires seven datasets: `library`, `upload`, `thumbs`, `profile`, `video
 You can organize these as one parent with seven child datasets, for example `/mnt/tank/immich/library`, `/mnt/tank/immich/upload`, and so on.
 
 <img
-src={require('./img/truenas12.png').default}
+src={require('./img/truenas12.webp').default}
 width="30%"
 alt="Immich App Widget"
 className="border rounded-xl"
@@ -41,7 +41,7 @@ className="border rounded-xl"
 :::info Permissions
 The **pgData** dataset must be owned by the user `netdata` (UID 999) for postgres to start. The other datasets must be owned by the user `root` (UID 0) or a group that includes the user `root` (UID 0) for immich to have the necessary permissions.
 
-If the **library** dataset uses ACL it must have [ACL mode](https://www.truenas.com/docs/core/coretutorials/storage/pools/permissions/#access-control-lists) set to `Passthrough` if you plan on using a [storage template](/docs/administration/storage-template.mdx) and the dataset is configured for network sharing (its ACL type is set to `SMB/NFSv4`). When the template is applied and files need to be moved from **upload** to **library**, immich performs `chmod` internally and needs to be allowed to execute the command. [More info.](https://github.com/immich-app/immich/pull/13017)
+If the **library** dataset uses ACL it must have [ACL mode](https://www.truenas.com/docs/core/coretutorials/storage/pools/permissions/#access-control-lists) set to `Passthrough` if you plan on using a [storage template](/docs/administration/storage-template.mdx) and the dataset is configured for network sharing (its ACL type is set to `SMB/NFSv4`). When the template is applied and files need to be moved from **upload** to **library**, Immich performs `chmod` internally and needs to be allowed to execute the command. [More info.](https://github.com/immich-app/immich/pull/13017)
 :::
 
 ## Installing the Immich Application
@@ -49,7 +49,7 @@ If the **library** dataset uses ACL it must have [ACL mode](https://www.truenas.
 To install the **Immich** application, go to **Apps**, click **Discover Apps**, either begin typing Immich into the search field or scroll down to locate the **Immich** application widget.
 
 <img
-src={require('./img/truenas01.png').default}
+src={require('./img/truenas01.webp').default}
 width="50%"
 alt="Immich App Widget"
 className="border rounded-xl"
@@ -60,7 +60,7 @@ Click on the widget to open the **Immich** application details screen.
 <br/><br/>
 
 <img
-src={require('./img/truenas02.png').default}
+src={require('./img/truenas02.webp').default}
 width="100%"
 alt="Immich App Details Screen"
 className="border rounded-xl"
@@ -76,7 +76,7 @@ To find specific fields click in the **Search Input Fields** search field, scrol
 ### Application Name and Version
 
 <img
-src={require('./img/truenas03.png').default}
+src={require('./img/truenas03.webp').default}
 width="100%"
 alt="Install Immich Screen"
 className="border rounded-xl"
@@ -92,7 +92,7 @@ The **Installed Applications** screen shows the option to update applications.
 ### Immich Configuration
 
 <img
-src={require('./img/truenas05.png').default}
+src={require('./img/truenas05.webp').default}
 width="40%"
 alt="Configuration Settings"
 className="border rounded-xl"
@@ -118,7 +118,7 @@ Leave **Additional Environment Variables** blank or see [Environment Variables](
 ### Network Configuration
 
 <img
-src={require('./img/truenas06.png').default}
+src={require('./img/truenas06.webp').default}
 width="40%"
 alt="Networking Settings"
 className="border rounded-xl"
@@ -136,7 +136,7 @@ Regardless of version, to avoid port conflicts, don't use [ports on this list](h
 Immich requires seven storage datasets.
 
 <img
-src={require('./img/truenas07.png').default}
+src={require('./img/truenas07.webp').default}
 width="20%"
 alt="Configure Storage ixVolumes"
 className="border rounded-xl"
@@ -149,7 +149,7 @@ The default setting for datasets is **ixVolume (dataset created automatically by
 For each Storage option select **Host Path (Path that already exists on the system)** and then select the matching dataset [created before installing the app](#setting-up-storage-datasets): **Immich Library Storage**: `library`, **Immich Uploads Storage**: `upload`, **Immich Thumbs Storage**: `thumbs`, **Immich Profile Storage**: `profile`, **Immich Video Storage**: `video`, **Immich Backups Storage**: `backups`, **Postgres Data Storage**: `pgData`.
 
 <img
-src={require('./img/truenas08.png').default}
+src={require('./img/truenas08.webp').default}
 width="40%"
 alt="Configure Storage Host Paths"
 className="border rounded-xl"
@@ -160,15 +160,19 @@ The image above has example values.
 
 ### Additional Storage [(External Libraries)](/docs/features/libraries)
 
+:::danger Advanced Users Only
+This feature should only be used by advanced users. If this is your first time installing Immich, then DO NOT mount an external library until you have a working setup. Also, your mount path MUST be something unique and should NOT be your library or upload location or a Linux directory like `/lib`. The picture below shows a valid example.
+:::
+
 <img
-src={require('./img/truenas10.png').default}
+src={require('./img/truenas10.webp').default}
 width="40%"
 alt="Configure Storage Host Paths"
 className="border rounded-xl"
 />
 
 You may configure [External Libraries](/docs/features/libraries) by mounting them using **Additional Storage**.
-The **Mount Path** is the loaction you will need to copy and paste into the External Library settings within Immich.
+The **Mount Path** is the location you will need to copy and paste into the External Library settings within Immich.
 The **Host Path** is the location on the TrueNAS SCALE server where your external library is located.
 
 <!-- A section for Labels would go here but I don't know what they do. -->
@@ -176,7 +180,7 @@ The **Host Path** is the location on the TrueNAS SCALE server where your externa
 ### Resources Configuration
 
 <img
-src={require('./img/truenas09.png').default}
+src={require('./img/truenas09.webp').default}
 width="40%"
 alt="Resource Limits"
 className="border rounded-xl"
@@ -194,7 +198,7 @@ The **CPU** value was specified in a different format with a default of `4000m` 
 The **Memory** value was specified in a different format with a default of `8Gi` which is 8 GiB of RAM. The value was specified in bytes or a number with a measurement suffix. Examples: `129M`, `123Mi`, `1000000000`
 :::
 
-Enable **GPU Configuration** options if you have a GPU that you will use for [Hardware Transcoding](/docs/features/hardware-transcoding) and/or [Hardware-Accelerated Machine Learning](/docs/features/ml-hardware-acceleration.md). More info: [GPU Passtrough Docs for TrueNAS Apps](https://www.truenas.com/docs/truenasapps/#gpu-passthrough)
+Enable **GPU Configuration** options if you have a GPU that you will use for [Hardware Transcoding](/docs/features/hardware-transcoding) and/or [Hardware-Accelerated Machine Learning](/docs/features/ml-hardware-acceleration.md). More info: [GPU Passthrough Docs for TrueNAS Apps](https://www.truenas.com/docs/truenasapps/#gpu-passthrough)
 
 ### Install
 
@@ -203,7 +207,7 @@ The system opens the **Installed Applications** screen with the Immich app in th
 When the installation completes it changes to **Running**.
 
 <img
-src={require('./img/truenas04.png').default}
+src={require('./img/truenas04.webp').default}
 width="100%"
 alt="Immich Installed"
 className="border rounded-xl"
@@ -229,7 +233,7 @@ For more information on how to use the application once installed, please refer 
 You can set [Environment Variables](/docs/install/environment-variables) by clicking **Add** on the **Additional Environment Variables** option and filling in the **Name** and **Value**.
 
 <img
-src={require('./img/truenas11.png').default}
+src={require('./img/truenas11.webp').default}
 width="40%"
 alt="Environment Variables"
 className="border rounded-xl"

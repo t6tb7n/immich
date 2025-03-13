@@ -8,15 +8,15 @@
   import { getPersonNameWithHiddenValue } from '$lib/utils/person';
   import {
     createPerson,
-    getAllPeople,
     getFaces,
     reassignFacesById,
     AssetTypeEnum,
     type AssetFaceResponseDto,
     type PersonResponseDto,
+    deleteFace,
   } from '@immich/sdk';
   import Icon from '$lib/components/elements/icon.svelte';
-  import { mdiAccountOff, mdiArrowLeftThin, mdiPencil, mdiRestart } from '@mdi/js';
+  import { mdiAccountOff, mdiArrowLeftThin, mdiPencil, mdiRestart, mdiTrashCan } from '@mdi/js';
   import { onMount } from 'svelte';
   import { linear } from 'svelte/easing';
   import { fly } from 'svelte/transition';
@@ -25,8 +25,10 @@
   import AssignFaceSidePanel from './assign-face-side-panel.svelte';
   import CircleIconButton from '$lib/components/elements/buttons/circle-icon-button.svelte';
   import { zoomImageToBase64 } from '$lib/utils/people-utils';
-  import { photoViewer } from '$lib/stores/assets.store';
+  import { photoViewerImgElement } from '$lib/stores/assets-store.svelte';
   import { t } from 'svelte-i18n';
+  import { dialogController } from '$lib/components/shared-components/dialog/dialog';
+  import { assetViewingStore } from '$lib/stores/asset-viewing.store';
 
   interface Props {
     assetId: string;
@@ -53,7 +55,6 @@
 
   // search people
   let showSelectedFaces = $state(false);
-  let allPeople: PersonResponseDto[] = $state([]);
 
   // timers
   let loaderLoadingDoneTimeout: ReturnType<typeof setTimeout>;
@@ -64,8 +65,6 @@
   async function loadPeople() {
     const timeout = setTimeout(() => (isShowLoadingPeople = true), timeBeforeShowLoadingSpinner);
     try {
-      const { people } = await getAllPeople({ withHidden: true });
-      allPeople = people;
       peopleWithFaces = await getFaces({ id: assetId });
     } catch (error) {
       handleError(error, $t('errors.cant_get_faces'));
@@ -167,6 +166,30 @@
     editedFace = face;
     showSelectedFaces = true;
   };
+
+  const deleteAssetFace = async (face: AssetFaceResponseDto) => {
+    try {
+      if (!face.person) {
+        return;
+      }
+
+      const isConfirmed = await dialogController.show({
+        prompt: $t('confirm_delete_face', { values: { name: face.person.name } }),
+      });
+
+      if (!isConfirmed) {
+        return;
+      }
+
+      await deleteFace({ id: face.id, assetFaceDeleteDto: { force: false } });
+
+      peopleWithFaces = peopleWithFaces.filter((f) => f.id !== face.id);
+
+      await assetViewingStore.setAssetId(assetId);
+    } catch (error) {
+      handleError(error, $t('error_delete_face'));
+    }
+  };
 </script>
 
 <section
@@ -198,7 +221,7 @@
           <LoadingSpinner />
         </div>
       {:else}
-        {#each peopleWithFaces as face, index}
+        {#each peopleWithFaces as face, index (face.id)}
           {@const personName = face.person ? face.person?.name : $t('face_unassigned')}
           <div class="relative z-[20001] h-[115px] w-[95px]">
             <div
@@ -246,7 +269,7 @@
                     hidden={face.person.isHidden}
                   />
                 {:else}
-                  {#await zoomImageToBase64(face, assetId, assetType, $photoViewer)}
+                  {#await zoomImageToBase64(face, assetId, assetType, $photoViewerImgElement)}
                     <ImageThumbnail
                       curve
                       shadow
@@ -312,6 +335,19 @@
                   </div>
                 {/if}
               </div>
+              {#if face.person != null}
+                <div class="absolute -right-[5px] top-[25px] h-[20px] w-[20px] rounded-full">
+                  <CircleIconButton
+                    color="red"
+                    icon={mdiTrashCan}
+                    title={$t('delete_face')}
+                    size="18"
+                    padding="1"
+                    class="absolute left-1/2 top-1/2 translate-x-[-50%] translate-y-[-50%] transform"
+                    onclick={() => deleteAssetFace(face)}
+                  />
+                </div>
+              {/if}
             </div>
           </div>
         {/each}
@@ -322,7 +358,6 @@
 
 {#if showSelectedFaces && editedFace}
   <AssignFaceSidePanel
-    {allPeople}
     {editedFace}
     {assetId}
     {assetType}
