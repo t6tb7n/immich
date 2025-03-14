@@ -13,6 +13,8 @@ import 'package:immich_mobile/repositories/asset_media.repository.dart';
 import 'package:photo_manager/photo_manager.dart' hide AssetType;
 import 'package:crypto/crypto.dart';
 
+import 'package:immich_mobile/utils/extended_path_provider.dart';
+
 final albumMediaRepositoryProvider = Provider((ref) =>
     (Platform.isLinux || Platform.isWindows)
         ? DesktopAlbumMediaRepository()
@@ -103,21 +105,9 @@ class AlbumMediaRepository implements IAlbumMediaRepository {
 }
 
 class DesktopAlbumMediaRepository implements IAlbumMediaRepository {
-  Future<String> getDefaultAlbumPath() async {
-    if (Platform.isLinux) {
-      return (await Process.run('xdg-user-dir', ['PICTURES']))
-          .stdout
-          .toString()
-          .trim();
-    } else {
-      final user = Platform.environment["UserProfile"]!;
-      return '$user\\Pictures';
-    }
-  }
-
   Future<Album> getDefaultAlbum() async {
     final outputDir = await getDefaultAlbumPath();
-    final name = outputDir.split('/').last;
+    final name = outputDir.split(Platform.pathSeparator).last;
     final album = Album(
       name: name,
       createdAt: DateTime.now().toUtc(),

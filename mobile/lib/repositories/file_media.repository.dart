@@ -6,6 +6,7 @@ import 'package:immich_mobile/entities/asset.entity.dart';
 import 'package:immich_mobile/interfaces/file_media.interface.dart';
 import 'package:immich_mobile/repositories/asset_media.repository.dart';
 import 'package:photo_manager/photo_manager.dart' hide AssetType;
+import 'package:immich_mobile/utils/extended_path_provider.dart';
 
 final fileMediaRepositoryProvider = Provider((ref) =>
     (Platform.isLinux || Platform.isWindows)
@@ -83,18 +84,6 @@ class FileMediaRepository implements IFileMediaRepository {
 }
 
 class DesktopFileMediaRepository implements IFileMediaRepository {
-  Future<String> getDefaultAlbumPath() async {
-    if (Platform.isLinux) {
-      return (await Process.run('xdg-user-dir', ['PICTURES']))
-          .stdout
-          .toString()
-          .trim();
-    } else {
-      final user = Platform.environment["UserProfile"]!;
-      return '$user\\Pictures';
-    }
-  }
-
   @override
   Future<Asset?> saveImage(
     Uint8List data, {
