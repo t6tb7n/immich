@@ -14,12 +14,14 @@ import 'package:flutter/widgets.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:immich_mobile/domain/interfaces/exif.interface.dart';
 import 'package:immich_mobile/domain/interfaces/user.interface.dart';
+import 'package:immich_mobile/domain/interfaces/user_api.repository.dart';
 import 'package:immich_mobile/domain/models/store.model.dart';
 import 'package:immich_mobile/domain/services/store.service.dart';
 import 'package:immich_mobile/entities/backup_album.entity.dart';
 import 'package:immich_mobile/entities/store.entity.dart';
 import 'package:immich_mobile/infrastructure/repositories/exif.repository.dart';
 import 'package:immich_mobile/infrastructure/repositories/user.repository.dart';
+import 'package:immich_mobile/infrastructure/repositories/user_api.repository.dart';
 import 'package:immich_mobile/interfaces/backup_album.interface.dart';
 import 'package:immich_mobile/interfaces/partner.interface.dart';
 import 'package:immich_mobile/models/backup/backup_candidate.model.dart';
@@ -42,7 +44,6 @@ import 'package:immich_mobile/repositories/network.repository.dart';
 import 'package:immich_mobile/repositories/partner.repository.dart';
 import 'package:immich_mobile/repositories/partner_api.repository.dart';
 import 'package:immich_mobile/repositories/permission.repository.dart';
-import 'package:immich_mobile/repositories/user_api.repository.dart';
 import 'package:immich_mobile/services/album.service.dart';
 import 'package:immich_mobile/services/api.service.dart';
 import 'package:immich_mobile/services/app_settings.service.dart';
@@ -53,7 +54,6 @@ import 'package:immich_mobile/services/hash.service.dart';
 import 'package:immich_mobile/services/localization.service.dart';
 import 'package:immich_mobile/services/network.service.dart';
 import 'package:immich_mobile/services/sync.service.dart';
-import 'package:immich_mobile/services/user.service.dart';
 import 'package:immich_mobile/utils/backup_progress.dart';
 import 'package:immich_mobile/utils/bootstrap.dart';
 import 'package:immich_mobile/utils/diff.dart';
@@ -412,7 +412,7 @@ class BackgroundService {
             : DesktopFileMediaRepository();
     IUserRepository userRepository = IsarUserRepository(db);
     AssetMediaRepository assetMediaRepository = AssetMediaRepository();
-    UserApiRepository userApiRepository =
+    IUserApiRepository userApiRepository =
         UserApiRepository(apiService.usersApi);
     AlbumApiRepository albumApiRepository =
         AlbumApiRepository(apiService.albumsApi);
@@ -435,14 +435,10 @@ class BackgroundService {
       userRepository,
       StoreService.I,
       eTagRepository,
-    );
-    UserService userService = UserService(
       partnerApiRepository,
       userApiRepository,
-      userRepository,
     );
     AlbumService albumService = AlbumService(
-      userService,
       syncSerive,
       entityService,
       albumRepository,
